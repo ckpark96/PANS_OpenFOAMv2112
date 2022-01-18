@@ -116,13 +116,13 @@ protected:
             dimensionedScalar fEpsilon_;
             // dimensionedScalar uLim_;
             // dimensionedScalar loLim_;
-            dimensionedScalar fK_;
-            dimensionedScalar C2U_;
+            // dimensionedScalar C2U_;
+            // dimensionedScalar fK_;
 
         // Fields
 
-            // volScalarField fK_; // uncomment for spatially varying fK
-            // volScalarField C2U_; // uncomment for spatially varying fK
+            volScalarField fK_; // uncomment for spatially varying fK
+            volScalarField C2U_; // uncomment for spatially varying fK
             // //- Run-time selectable delta model
             // autoPtr<Foam::LESdelta> delta_;
 

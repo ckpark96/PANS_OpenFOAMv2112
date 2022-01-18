@@ -147,11 +147,13 @@ protected:
 
         // Model constants
 
+            // dimensionedScalar SMALL_;
             dimensionedScalar fEpsilon_;
             // dimensionedScalar uLim_;
             // dimensionedScalar loLim_;
             dimensionedScalar fK_;
             dimensionedScalar fOmega_;
+            
 
 
         // Fields
@@ -220,7 +222,8 @@ public:
         //- Re-read model coefficients if they have changed
         virtual bool read();
 
-        //- Access function to filter width
+        ///// Comment for fixed fK
+        // //- Access function to filter width
         // inline const volScalarField& delta() const
         // {
         //     return *delta_;

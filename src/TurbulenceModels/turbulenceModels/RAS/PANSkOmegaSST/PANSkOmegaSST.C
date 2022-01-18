@@ -26,6 +26,9 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "PANSkOmegaSST.H"
+#include <iostream>
+
+// SMALL = 1e-15 (predefined in C++)
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -52,57 +55,67 @@ tmp<volScalarField> PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST::F1
 (
     const volScalarField& CDkOmega
 ) const
-{
+{   
+    std::cout << "SMALL =" << " ";
+    printf( "%16.16lf", SMALL );
+    std::cout << "\n" << " ";
     tmp<volScalarField> CDkOmegaPlus = max
     (
         CDkOmega,
         dimensionedScalar("1.0e-10", dimless/sqr(dimTime), 1.0e-10)
     );
-
+    // std::cout << "Begin 1" << "\n";
     tmp<volScalarField> arg1 = min
     (
         min
         (
             max
             (
-                (scalar(1)/this->betaStar_)*sqrt(kU_)/(omegaU_*this->y_),
-                scalar(500)*(this->mu()/this->rho_)/(sqr(this->y_)*omegaU_)
+                (scalar(1)/this->betaStar_)*sqrt(kU_)/max(dimensionedScalar("minOmegaU", dimensionSet(0,1,-1,0,0,0,0), SMALL),(omegaU_*this->y_)),
+                scalar(500)*(this->mu()/this->rho_)/max(dimensionedScalar("minOmegaU", dimensionSet(0,2,-1,0,0,0,0), SMALL),(sqr(this->y_)*omegaU_))
             ),
             (4*this->alphaOmega2_*(fK_/fOmega_))*kU_
             /(CDkOmegaPlus*sqr(this->y_))
         ),
         scalar(10)
     );
+    // std::cout << "Pass 1" << "\n";
 
     return tanh(pow4(arg1));
 }
+
 
 template<class BasicTurbulenceModel>
 tmp<volScalarField>
 PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST::F2() const
 {
+    // std::cout << "Begin 2" << "\n";
     tmp<volScalarField> arg2 = min
     (
         max
         (
-            (scalar(2)/this->betaStar_)*sqrt(kU_)/(omegaU_*this->y_),
-            scalar(500)*(this->mu()/this->rho_)/(sqr(this->y_)*omegaU_)
+            (scalar(2)/this->betaStar_)*sqrt(kU_)/max(dimensionedScalar("minOmegaU", dimensionSet(0,1,-1,0,0,0,0), SMALL),(omegaU_*this->y_)),
+            scalar(500)*(this->mu()/this->rho_)/max(dimensionedScalar("minOmegaU", dimensionSet(0,2,-1,0,0,0,0), SMALL),(sqr(this->y_)*omegaU_))
         ),
         scalar(100)
     );
+    // std::cout << "Pass 2" << "\n";
 
     return tanh(sqr(arg2));
 }
+
 
 template<class BasicTurbulenceModel>
 tmp<volScalarField>
 PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST::F3() const
 {
+    // std::cout << "Begin 3" << "\n";
     tmp<volScalarField> arg3 = min
     (
         150*(this->mu()/this->rho_)/(omegaU_*sqr(this->y_)),
         scalar(10)
     );
+    // std::cout << "Pass 3" << "\n";
 
     return 1 - tanh(pow4(arg3));
 }
@@ -202,6 +215,15 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
         transport,
         propertiesName
     ),
+    // SMALL_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "SMALL",
+    //         this->coeffDict_,
+    //         1e-7
+    //     )
+    // ),
 
     fEpsilon_
     (
@@ -238,10 +260,10 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
         //     IOobject::groupName("fK", alphaRhoPhi.group()),
         //     this->runTime_.timeName(),
         //     this->mesh_,
-        //     IOobject::NO_READ,
+        //     IOobject::MUST_READ,
         //     IOobject::AUTO_WRITE
         // ),
-        // this->mesh_,
+        // this->mesh_
         // dimensionedScalar("zero", loLim_)
         dimensioned<scalar>::lookupOrAddToDict
         (
@@ -265,9 +287,9 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
         // dimensioned<scalar>::lookupOrAddToDict
         // (
         //     "fOmega",
-        //     this->coeffDict_,
-        // )
-        fEpsilon_/fK_ 
+        //     this->coeffDict_
+        // ),
+        fEpsilon_/fK_
     ),
 
     // delta_
@@ -332,7 +354,8 @@ bool PANSkOmegaSST<BasicTurbulenceModel>::read()
         // uLim_.readIfPresent(this->coeffDict());
         // loLim_.readIfPresent(this->coeffDict());
         fK_.readIfPresent(this->coeffDict());
-        // fOmega_.readIfPresent(this->coeffDict());
+        fOmega_.readIfPresent(this->coeffDict());
+        // print(fOmega);
 
         return true;
     }
@@ -372,11 +395,13 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
     // Update omegaU and G at the wall
     omegaU_.boundaryFieldRef().updateCoeffs();
 
+    // std::cout << "Begin 4" << "\n";
     volScalarField CDkOmega
     (
         (2*this->alphaOmega2_*(fK_/fOmega_))*
-        (fvc::grad(kU_) & fvc::grad(omegaU_))/omegaU_
+        (fvc::grad(kU_) & fvc::grad(omegaU_))/max(dimensionedScalar("minOmegaU", dimensionSet(0,0,-1,0,0,0,0), SMALL),omegaU_)
     );
+    // std::cout << "Pass 4" << "\n";
 
     volScalarField F1(this->F1(CDkOmega));
     volScalarField F23(this->F23());
@@ -390,8 +415,8 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
             + (beta/fOmega_)
         );
 
-
         // Unresolved Turbulent frequency equation
+        // std::cout << "Begin 5" << "\n";
         tmp<fvScalarMatrix> omegaUEqn
         (
             fvm::ddt(alpha, rho, omegaU_)
@@ -409,13 +434,14 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
           - fvm::Sp(alpha*rho*betaL*omegaU_, omegaU_)
           - fvm::SuSp
             (
-                alpha*rho*(F1 - scalar(1))*CDkOmega/omegaU_,
+                alpha*rho*(F1 - scalar(1))*CDkOmega/max(dimensionedScalar("minOmegaU", dimensionSet(0,0,-1,0,0,0,0), SMALL),omegaU_),
                 omegaU_
             )
           + Qsas(S2, gamma, beta)
           + omegaSource()
           + fvOptions(alpha, rho, omegaU_)
         );
+        // std::cout << "Pass 5" << "\n";
 
         omegaUEqn.ref().relax();
         fvOptions.constrain(omegaUEqn.ref());
@@ -427,6 +453,7 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
     }
 
     // Turbulent kinetic energy equation
+    // std::cout << "Begin 6" << "\n";
     tmp<fvScalarMatrix> kUEqn
     (
         fvm::ddt(alpha, rho, kU_)
@@ -439,6 +466,7 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
       + kSource()
       + fvOptions(alpha, rho, kU_)
     );
+    // std::cout << "Pass 6" << "\n";
 
     kUEqn.ref().relax();
     fvOptions.constrain(kUEqn.ref());

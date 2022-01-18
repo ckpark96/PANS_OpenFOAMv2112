@@ -170,18 +170,43 @@ PANSkEpsilon<BasicTurbulenceModel>::PANSkEpsilon
             1.0
         )
     ),
-    // FOR FIXED fK
+    // FOR FIXED fK (single value)
+    // fK_
+    // (
+    //     dimensioned<scalar>::lookupOrAddToDict
+    //     (
+    //         "fK",
+    //         this->coeffDict_,
+    //         1.0 // to be varied based on preliminary RANS calculation
+    //     )
+    // ),
+    // C2U_
+    // (C1_ + (fK_/fEpsilon_)*(C2_ - C1_)),
+    // FOR FIXED fK (Spatially varying)
     fK_
     (
-        dimensioned<scalar>::lookupOrAddToDict
+        IOobject
         (
-            "fK",
-            this->coeffDict_,
-            1.0 // to be varied based on preliminary RANS calculation
-        )
+            IOobject::groupName("fK", U.group()),
+            this->runTime_.timeName(),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh_
     ),
+
     C2U_
-    (C1_ + (fK_/fEpsilon_)*(C2_ - C1_)),
+    (
+        IOobject
+        (
+            "C2U",
+            this->runTime_.timeName(),
+            this->mesh_
+        ),
+        C1_ + (fK_/fEpsilon_)*(C2_ - C1_)
+    ),
+    
     // FOR VARIABLE fK
     // uLim_
     // (
@@ -287,8 +312,8 @@ PANSkEpsilon<BasicTurbulenceModel>::PANSkEpsilon
 {
     bound(k_, this->kMin_);
     bound(epsilon_, this->epsilonMin_);
-    // bound(kU_, min(fK_)*this->kMin_);
-    bound(kU_, fK_*this->kMin_);
+    bound(kU_, min(fK_)*this->kMin_);
+    // bound(kU_, fK_*this->kMin_);
     bound(epsilonU_, fEpsilon_*this->epsilonMin_);
 
     if (type == typeName)
@@ -315,7 +340,7 @@ bool PANSkEpsilon<BasicTurbulenceModel>::read()
         fEpsilon_.readIfPresent(this->coeffDict());
         // uLim_.readIfPresent(this->coeffDict());
         // loLim_.readIfPresent(this->coeffDict());
-        fK_.readIfPresent(this->coeffDict());
+        // fK_.readIfPresent(this->coeffDict());
 
         return true;
     }
@@ -400,8 +425,8 @@ void PANSkEpsilon<BasicTurbulenceModel>::correct()
     fvOptions.constrain(kUEqn.ref());
     solve(kUEqn);
     fvOptions.correct(kU_);
-    // bound(kU_, min(fK_)*this->kMin_);
-    bound(kU_, fK_*this->kMin_);
+    bound(kU_, min(fK_)*this->kMin_);
+    // bound(kU_, fK_*this->kMin_);
 
     // Calculation of Turbulent kinetic energy and Dissipation rate
     k_ = kU_/fK_;
