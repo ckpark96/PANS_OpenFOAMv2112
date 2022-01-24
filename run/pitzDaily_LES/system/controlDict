@@ -16,19 +16,19 @@ FoamFile
 
 application     pisoFoam;
 
-startFrom       startTime;
+startFrom       latestTime;
 
 startTime       0;
 
 stopAt          endTime;
 
-endTime         0.1;
+endTime         0.6;
 
 deltaT          1e-05;
 
-writeControl    timeStep;
+writeControl    adjustable;
 
-writeInterval   100;
+writeInterval   0.01;
 
 purgeWrite      0;
 

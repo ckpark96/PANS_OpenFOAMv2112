@@ -151,15 +151,15 @@ protected:
             dimensionedScalar fEpsilon_;
             // dimensionedScalar uLim_;
             // dimensionedScalar loLim_;
-            dimensionedScalar fK_;
-            dimensionedScalar fOmega_;
+            // dimensionedScalar fK_;
+            // dimensionedScalar fOmega_;
             
 
 
         // Fields
 
-            // volScalarField fK_;
-            // volScalarField fOmega_;
+            volScalarField fK_;
+            volScalarField fOmega_;
             // // - Run-time selectable delta model
             // autoPtr<Foam::LESdelta> delta_;
 

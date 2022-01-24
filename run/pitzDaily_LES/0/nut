@@ -22,22 +22,26 @@ boundaryField
 {
     inlet
     {
-        type            zeroGradient;
+        type            calculated;
+        value           $internalField;
     }
 
     outlet
     {
-        type            zeroGradient;
+        type            calculated;
+        value           $internalField;
     }
 
     upperWall
     {
-        type            zeroGradient;
+        type            fixedValue;
+        value		$internalField;
     }
 
     lowerWall
     {
-        type            zeroGradient;
+        type            fixedValue;
+        value		$internalField;
     }
 
     frontAndBack

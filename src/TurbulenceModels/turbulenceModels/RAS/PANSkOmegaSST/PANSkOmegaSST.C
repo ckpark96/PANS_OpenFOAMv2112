@@ -255,41 +255,41 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
 
     fK_
     (
-        // IOobject
-        // (
-        //     IOobject::groupName("fK", alphaRhoPhi.group()),
-        //     this->runTime_.timeName(),
-        //     this->mesh_,
-        //     IOobject::MUST_READ,
-        //     IOobject::AUTO_WRITE
-        // ),
-        // this->mesh_
-        // dimensionedScalar("zero", loLim_)
-        dimensioned<scalar>::lookupOrAddToDict
+        IOobject
         (
-            "fK",
-            this->coeffDict_,
-            1.0 // to be varied based on preliminary RANS calculation
-        )
+            IOobject::groupName("fK", alphaRhoPhi.group()),
+            this->runTime_.timeName(),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh_
+        // dimensionedScalar("zero", loLim_)
+        // dimensioned<scalar>::lookupOrAddToDict
+        // (
+        //     "fK",
+        //     this->coeffDict_,
+        //     1.0 // to be varied based on preliminary RANS calculation
+        // )
     ),
 
     fOmega_
     (
-        // IOobject
-        // (
-        //     "fOmega",
-        //     this->runTime_.timeName(),
-        //     this->mesh_,
-        //     IOobject::NO_READ,
-        //     IOobject::AUTO_WRITE
-        // ),
-        // fEpsilon_/fK_
+        IOobject
+        (
+            "fOmega",
+            this->runTime_.timeName(),
+            this->mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        fEpsilon_/fK_
         // dimensioned<scalar>::lookupOrAddToDict
         // (
         //     "fOmega",
         //     this->coeffDict_
         // ),
-        fEpsilon_/fK_
+        // fEpsilon_/fK_
     ),
 
     // delta_
@@ -330,10 +330,10 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
         this->omega_.boundaryField().types()
     )
 {
-    // bound(kU_, min(fK_)*this->kMin_);    
-    // bound(omegaU_, min(fOmega_)*this->omegaMin_);
-    bound(kU_, fK_*this->kMin_);
-    bound(omegaU_, fOmega_*this->omegaMin_);
+    bound(kU_, min(fK_)*this->kMin_);    
+    bound(omegaU_, min(fOmega_)*this->omegaMin_);
+    // bound(kU_, fK_*this->kMin_);
+    // bound(omegaU_, fOmega_*this->omegaMin_);
 
     if (type == typeName)
     {
@@ -353,8 +353,8 @@ bool PANSkOmegaSST<BasicTurbulenceModel>::read()
         fEpsilon_.readIfPresent(this->coeffDict());
         // uLim_.readIfPresent(this->coeffDict());
         // loLim_.readIfPresent(this->coeffDict());
-        fK_.readIfPresent(this->coeffDict());
-        fOmega_.readIfPresent(this->coeffDict());
+        // fK_.readIfPresent(this->coeffDict());
+        // fOmega_.readIfPresent(this->coeffDict());
         // print(fOmega);
 
         return true;
@@ -448,8 +448,8 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
         omegaUEqn.ref().boundaryManipulate(omegaU_.boundaryFieldRef());
         solve(omegaUEqn);
         fvOptions.correct(omegaU_);
-        // bound(omegaU_, min(fOmega_)*this->omegaMin_);
-        bound(omegaU_, fOmega_*this->omegaMin_);
+        bound(omegaU_, min(fOmega_)*this->omegaMin_);
+        // bound(omegaU_, fOmega_*this->omegaMin_);
     }
 
     // Turbulent kinetic energy equation
@@ -472,8 +472,8 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
     fvOptions.constrain(kUEqn.ref());
     solve(kUEqn);
     fvOptions.correct(kU_);
-    // bound(kU_, min(fK_)*this->kMin_);
-    bound(kU_, fK_*this->kMin_);
+    bound(kU_, min(fK_)*this->kMin_);
+    // bound(kU_, fK_*this->kMin_);
 
 
     // Calculation of Turbulent kinetic energy and Frequency
