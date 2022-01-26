@@ -33,14 +33,14 @@ boundaryField
 
     upperWall
     {
-        type            kqRWallFunction;
-        value           $internalField;
+        type            omegaWallFunction;
+        value           uniform 1000;
     }
 
     lowerWall
     {
         type            kqRWallFunction;
-        value           $internalField;
+        value           uniform 1000;
     }
 
     frontAndBack

@@ -43,29 +43,17 @@ vertices
     (290 16.6 0.5)
 );
 
-negX
-(
-    (10 25 5)
-    (90 75 1.5)
-);
-
 negY
 (
-    (2 70 10)
-    (1 30 0.1)
-);
-
-negYR
-(
-    (2 80 10)
-    (1 20 0.5)
+    (2 4 1)
+    (1 3 0.3)
 );
 
 posY
 (
-    (20 40 2)
-    (40 20 4)
-    (40 40 0.25)
+    (1 4 2)
+    (2 3 4)
+    (2 4 0.25)
 );
 
 posYR
@@ -78,20 +66,20 @@ posYR
 blocks
 (
     hex (0 3 4 1 11 14 15 12)
-    (40 30 1)
-    simpleGrading (0.25 $posY 1)
+    (18 30 1)
+    simpleGrading (0.5 $posY 1)
 
     hex (2 5 6 3 13 16 17 14)
     (180 27 1)
-    edgeGrading ($negX $negX $negX $negX $negY $negYR $negYR $negY 1 1 1 1)
+    edgeGrading (4 4 4 4 $negY 1 1 $negY 1 1 1 1)
 
     hex (3 6 7 4 14 17 18 15)
     (180 30 1)
-    edgeGrading ($negX $negX $negX $negX $posY $posYR $posYR $posY 1 1 1 1)
+    edgeGrading (4 4 4 4 $posY $posYR $posYR $posY 1 1 1 1)
 
     hex (5 8 9 6 16 19 20 17)
     (25 27 1)
-    simpleGrading (2.5 $negYR 1)
+    simpleGrading (2.5 1 1)
 
     hex (6 9 10 7 17 20 21 18)
     (25 30 1)

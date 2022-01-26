@@ -30,5 +30,13 @@ fieldAverage1
     }
 }
 
+surfaceSampling
+{
+    U
+    {
+        file            "<case>/postProcessing/surfaceSampling/0.3/nearWall.vtp";
+    }
+}
+
 
 // ************************************************************************* //
