@@ -22,8 +22,8 @@ boundaryField
 {
     inlet
     {
-        type            fixedValue;
-        value           $internalField;
+        type            inletOutlet; //fixedValue;
+        inletValue      $internalField;
     }
 
     outlet
@@ -33,19 +33,24 @@ boundaryField
 
     upperWall
     {
-        type            fixedValue; //kqRWallFunction;
+        type            kqRWallFunction;
         value           uniform 1e-4; //$internalField;
     }
 
     lowerWall
     {
-        type            fixedValue; //kqRWallFunction;
+        type            kqRWallFunction;
         value           uniform 1e-4; //$internalField;
     }
 
-    frontAndBack
+    front
     {
-        type            empty;
+        type            cyclic;
+    }
+    
+    back
+    {
+        type            cyclic;
     }
 }
 

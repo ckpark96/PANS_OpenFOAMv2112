@@ -26,7 +26,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "PANSkOmegaSST.H"
-#include <iostream>
+// #include <iostream>
 
 // SMALL = 1e-15 (predefined in C++)
 
@@ -56,9 +56,9 @@ tmp<volScalarField> PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST::F1
     const volScalarField& CDkOmega
 ) const
 {   
-    std::cout << "SMALL =" << " ";
-    printf( "%16.16lf", SMALL );
-    std::cout << "\n" << " ";
+    //std::cout << "SMALL =" << " ";
+    //printf( "%16.16lf", SMALL );
+    //std::cout << "\n" << " ";
     tmp<volScalarField> CDkOmegaPlus = max
     (
         CDkOmega,
@@ -120,6 +120,19 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST::F3() const
     return 1 - tanh(pow4(arg3));
 }
 
+// template<class BasicEddyViscosityModel>
+// tmp<volScalarField> PANSkOmegaSST<BasicEddyViscosityModel>::F23() const
+// {
+//     tmp<volScalarField> f23(F2());
+
+//     if (F3_)
+//     {
+//         f23.ref() *= F3();
+//     }
+
+//     return f23;
+// }
+
 
 template<class BasicTurbulenceModel>
 void PANSkOmegaSST<BasicTurbulenceModel>::correctNut
@@ -129,6 +142,7 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correctNut
 )
 {
     this->nut_ = this->a1_*kU_/max(this->a1_*omegaU_, this->b1_*F2*sqrt(S2));
+    // this->nut_ = this->a1_*kU_/max(this->a1_*omegaU_, this->b1_*F23()*sqrt(S2));
     this->nut_.correctBoundaryConditions();
     fv::options::New(this->mesh_).correct(this->nut_);
 
@@ -140,6 +154,44 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correctNut()
     // correctNut(2*magSqr(symm(fvc::grad(this->U_))));
     correctNut(2*magSqr(symm(fvc::grad(this->U_))), this->F23());
 }
+
+// template<class BasicEddyViscosityModel>
+// tmp<volScalarField::Internal> PANSkOmegaSST<BasicEddyViscosityModel>::Pk
+// (
+//     const volScalarField::Internal& G
+// ) const
+// {
+//     return min(G, (c1_*betaStar_)*this->kU_()*this->omegaU_());
+// }
+
+
+// template<class BasicEddyViscosityModel>
+// tmp<volScalarField::Internal>
+// PANSkOmegaSST<BasicEddyViscosityModel>::epsilonByk
+// (
+//     const volScalarField& F1,
+//     const volTensorField& gradU
+// ) const
+// {
+//     return betaStar_*omegaU_();
+// }
+
+
+// template<class BasicEddyViscosityModel>
+// tmp<volScalarField::Internal> PANSkOmegaSST<BasicEddyViscosityModel>::GbyNu
+// (
+//     const volScalarField::Internal& GbyNu0,
+//     const volScalarField::Internal& F2,
+//     const volScalarField::Internal& S2
+// ) const
+// {
+//     return min
+//     (
+//         GbyNu0,
+//         (c1_/a1_)*betaStar_*omegaU_()
+//        *max(a1_*omegaU_(), b1_*F2*sqrt(S2))
+//     );
+// }
 
 
 template<class BasicTurbulenceModel>
@@ -224,6 +276,180 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
     //         1e-7
     //     )
     // ),
+    // alphaK1_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "alphaK1",
+    //         this->coeffDict_,
+    //         0.85
+    //     )
+    // ),
+    // alphaK2_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "alphaK2",
+    //         this->coeffDict_,
+    //         1.0
+    //     )
+    // ),
+    // alphaOmega1_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "alphaOmega1",
+    //         this->coeffDict_,
+    //         0.5
+    //     )
+    // ),
+    // alphaOmega2_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "alphaOmega2",
+    //         this->coeffDict_,
+    //         0.856
+    //     )
+    // ),
+    // gamma1_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "gamma1",
+    //         this->coeffDict_,
+    //         5.0/9.0
+    //     )
+    // ),
+    // gamma2_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "gamma2",
+    //         this->coeffDict_,
+    //         0.44
+    //     )
+    // ),
+    // beta1_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "beta1",
+    //         this->coeffDict_,
+    //         0.075
+    //     )
+    // ),
+    // beta2_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "beta2",
+    //         this->coeffDict_,
+    //         0.0828
+    //     )
+    // ),
+    // betaStar_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "betaStar",
+    //         this->coeffDict_,
+    //         0.09
+    //     )
+    // ),
+    // a1_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "a1",
+    //         this->coeffDict_,
+    //         0.31
+    //     )
+    // ),
+    // b1_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "b1",
+    //         this->coeffDict_,
+    //         1.0
+    //     )
+    // ),
+    // c1_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "c1",
+    //         this->coeffDict_,
+    //         10.0
+    //     )
+    // ),
+    // F3_
+    // (
+    //     Switch::getOrAddToDict
+    //     (
+    //         "F3",
+    //         this->coeffDict_,
+    //         false
+    //     )
+    // ),
+
+    // y_(wallDist::New(this->mesh_).y()),
+
+    // k_
+    // (
+    //     IOobject
+    //     (
+    //         IOobject::groupName("k", alphaRhoPhi.group()),
+    //         this->runTime_.timeName(),
+    //         this->mesh_,
+    //         IOobject::MUST_READ,
+    //         IOobject::AUTO_WRITE
+    //     ),
+    //     this->mesh_
+    // ),
+    // omega_
+    // (
+    //     IOobject
+    //     (
+    //         IOobject::groupName("omega", alphaRhoPhi.group()),
+    //         this->runTime_.timeName(),
+    //         this->mesh_,
+    //         IOobject::MUST_READ,
+    //         IOobject::AUTO_WRITE
+    //     ),
+    //     this->mesh_
+    // ),
+    // decayControl_
+    // (
+    //     Switch::getOrAddToDict
+    //     (
+    //         "decayControl",
+    //         this->coeffDict_,
+    //         false
+    //     )
+    // ),
+    // kInf_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "kInf",
+    //         this->coeffDict_,
+    //         k_.dimensions(),
+    //         0
+    //     )
+    // ),
+    // omegaInf_
+    // (
+    //     dimensioned<scalar>::getOrAddToDict
+    //     (
+    //         "omegaInf",
+    //         this->coeffDict_,
+    //         omega_.dimensions(),
+    //         0
+    //     )
+    // )
+
 
     fEpsilon_
     (
@@ -309,6 +535,7 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
             IOobject::groupName("kU", alphaRhoPhi.group()),
             this->runTime_.timeName(),
             this->mesh_,
+            //IOobject::MUST_READ,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
@@ -323,6 +550,7 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
             IOobject::groupName("omegaU", alphaRhoPhi.group()),
             this->runTime_.timeName(),
             this->mesh_,
+            //IOobject::MUST_READ,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
@@ -334,6 +562,7 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
     bound(omegaU_, min(fOmega_)*this->omegaMin_);
     // bound(kU_, fK_*this->kMin_);
     // bound(omegaU_, fOmega_*this->omegaMin_);
+    // setDecayControl(this->coeffDict_);
 
     if (type == typeName)
     {
@@ -346,6 +575,27 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BasicTurbulenceModel>
+// void PANSkOmegaSST<BasicEddyViscosityModel>::setDecayControl
+// (
+//     const dictionary& dict
+// )
+// {
+//     decayControl_.readIfPresent("decayControl", dict);
+
+//     if (decayControl_)
+//     {
+//         kInf_.read(dict);
+//         omegaInf_.read(dict);
+
+//         Info<< "    Employing decay control with kInf:" << kInf_
+//             << " and omegaInf:" << omegaInf_ << endl;
+//     }
+//     else
+//     {
+//         kInf_.value() = 0;
+//         omegaInf_.value() = 0;
+//     }
+// }
 bool PANSkOmegaSST<BasicTurbulenceModel>::read()
 {
     if (kOmegaSSTBase<eddyViscosity<RASModel<BasicTurbulenceModel>>>::read())
@@ -356,6 +606,8 @@ bool PANSkOmegaSST<BasicTurbulenceModel>::read()
         // fK_.readIfPresent(this->coeffDict());
         // fOmega_.readIfPresent(this->coeffDict());
         // print(fOmega);
+
+        // setDecayControl(this->coeffDict());
 
         return true;
     }
@@ -389,6 +641,11 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
     tmp<volTensorField> tgradU = fvc::grad(U);
     volScalarField S2(2*magSqr(symm(tgradU())));
     volScalarField::Internal GbyNu((tgradU() && dev(twoSymm(tgradU()))));
+    // volScalarField::Internal GbyNu
+    // (
+    //     this->type() + ":GbyNu",
+    //     (tgradU() && dev(twoSymm(tgradU())))
+    // );
     volScalarField::Internal G(this->GName(), nut*GbyNu);
     tgradU.clear();
 
@@ -414,6 +671,7 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
             gamma*this->betaStar_ - (gamma *this->betaStar_/fOmega_)
             + (beta/fOmega_)
         );
+        // GbyNu0 = GbyNu(GbyNu0, F23(), S2());
 
         // Unresolved Turbulent frequency equation
         // std::cout << "Begin 5" << "\n";
@@ -463,10 +721,12 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
         min(alpha*rho*G, (this->c1_*this->betaStar_)*alpha()*rho()*kU_()*omegaU_())
       - fvm::SuSp((2.0/3.0)*alpha*rho*divU, kU_)
       - fvm::Sp(alpha*rho*this->betaStar_*omegaU_, kU_)
+    //   + alpha()*rho()*betaStar_*omegaInf_*kInf_
       + kSource()
       + fvOptions(alpha, rho, kU_)
     );
     // std::cout << "Pass 6" << "\n";
+    tgradU.clear();
 
     kUEqn.ref().relax();
     fvOptions.constrain(kUEqn.ref());
@@ -481,7 +741,7 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
     this->k_.correctBoundaryConditions();
 
     this->omega_ = omegaU_/fOmega_;
-    this->omega_.correctBoundaryConditions();
+    this->omega_.correctBoundaryConditions(); //does not seem to affect the result
 
     bound(this->k_, this->kMin_);
     bound(this->omega_, this->omegaMin_);

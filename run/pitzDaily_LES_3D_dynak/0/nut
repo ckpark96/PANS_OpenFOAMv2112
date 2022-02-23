@@ -16,14 +16,14 @@ FoamFile
 
 dimensions      [0 2 -1 0 0 0 0];
 
-internalField   uniform 0;
+internalField   uniform 1e-8;
 
 boundaryField
 {
     inlet
     {
         type            calculated;
-        value           $internalField;
+        value      $internalField;
     }
 
     outlet
@@ -34,19 +34,24 @@ boundaryField
 
     upperWall
     {
-        type            nutkWallFunction; //fixedValue;
+        type            nutUSpaldingWallFunction; //nutkWallFunction; //fixedValue;
         value		$internalField;
     }
 
     lowerWall
     {
-        type            nutkWallFunction; //fixedValue;
+        type            nutUSpaldingWallFunction; //nutkWallFunction; //fixedValue;
         value		$internalField;
     }
 
-    frontAndBack
+    front
     {
-        type            empty;
+        type            cyclic;
+    }
+    
+    back
+    {
+        type            cyclic;
     }
 }
 

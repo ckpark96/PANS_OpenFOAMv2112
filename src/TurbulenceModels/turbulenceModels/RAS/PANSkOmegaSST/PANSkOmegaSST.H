@@ -152,8 +152,7 @@ protected:
             // dimensionedScalar uLim_;
             // dimensionedScalar loLim_;
             // dimensionedScalar fK_;
-            // dimensionedScalar fOmega_;
-            
+            // dimensionedScalar fOmega_;           
 
 
         // Fields
