@@ -851,20 +851,7 @@ $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fvOptionI.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fvOptionListTemplates.C \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/bound.H \
 ../turbulenceModels/lnInclude/PANSkOmegaSST.H \
-$(WM_PROJECT_DIR)/src/TurbulenceModels/turbulenceModels/lnInclude/kOmegaSSTBase.H \
-$(WM_PROJECT_DIR)/src/TurbulenceModels/turbulenceModels/lnInclude/kOmegaSSTBase.C \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/wallDist.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/patchDistMethod.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/mapPolyMesh.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/objectMap.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/objectMapI.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fixedValueFvPatchFields.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fixedValueFvPatchField.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fixedValueFvPatchField.C \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/zeroGradientFvPatchFields.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/zeroGradientFvPatchField.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/zeroGradientFvPatchField.C \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/patchDistMethodTemplates.C \
+../turbulenceModels/lnInclude/PANSkOmegaSSTBase.H \
 ../turbulenceModels/lnInclude/PANSkOmegaSST.C \
 
 #END

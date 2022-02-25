@@ -25,7 +25,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::RASModels::PANSkOmegaSST
+    Foam::RASModels::kOmegaSST
 
 Group
     grpRASTurbulence
@@ -82,7 +82,7 @@ Description
 
     The default model coefficients are
     \verbatim
-        PANSkOmegaSSTCoeffs
+        kOmegaSSTCoeffs
         {
             alphaK1     0.85;
             alphaK2     1.0;
@@ -101,7 +101,7 @@ Description
     \endverbatim
 
 SourceFiles
-    PANSkOmegaSST.C
+    kOmegaSST.C
 
 SeeAlso
     kOmegaSSTBase.H
@@ -111,10 +111,9 @@ SeeAlso
 #ifndef PANSkOmegaSST_H
 #define PANSkOmegaSST_H
 
-#include "kOmegaSSTBase.H"
+#include "PANSkOmegaSSTBase.H"
 #include "RASModel.H"
 #include "eddyViscosity.H"
-#include "LESdelta.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -124,13 +123,13 @@ namespace RASModels
 {
 
 /*---------------------------------------------------------------------------*\
-                          Class PANSkOmegaSST Declaration
+                          Class kOmegaSST Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BasicTurbulenceModel>
 class PANSkOmegaSST
 :
-    public kOmegaSSTBase<eddyViscosity<RASModel<BasicTurbulenceModel>>>
+    public PANSkOmegaSSTBase<eddyViscosity<RASModel<BasicTurbulenceModel>>>
 {
     // Private Member Functions
 
@@ -145,45 +144,8 @@ protected:
 
     // Protected Member Functions
 
-        // Model constants
-
-            // dimensionedScalar SMALL_;
-            dimensionedScalar fEpsilon_;
-            // dimensionedScalar uLim_;
-            // dimensionedScalar loLim_;
-            // dimensionedScalar fK_;
-            // dimensionedScalar fOmega_;           
-
-
-        // Fields
-
-            volScalarField fK_;
-            volScalarField fOmega_;
-            // // - Run-time selectable delta model
-            // autoPtr<Foam::LESdelta> delta_;
-
-            volScalarField kU_;
-            volScalarField omegaU_;
-
-    // Private Member Functions   
-    
-        tmp<volScalarField> F1(const volScalarField& CDkOmega) const;
-        tmp<volScalarField> F2() const;
-        tmp<volScalarField> F3() const;
-
-        virtual void correctNut(const volScalarField& S2, const volScalarField& F2);
+        virtual void correctNut(const volScalarField& S2);
         virtual void correctNut();
-
-        virtual tmp<fvScalarMatrix> kSource() const;
-        virtual tmp<fvScalarMatrix> omegaSource() const;
-
-        //- PANS omega source
-        virtual tmp<fvScalarMatrix> Qsas
-        (
-            const volScalarField::Internal& S2,
-            const volScalarField::Internal& gamma,
-            const volScalarField::Internal& beta
-        ) const;
 
 
 public:
@@ -215,92 +177,6 @@ public:
 
     //- Destructor
     virtual ~PANSkOmegaSST() = default;
-
-    // Member Functions
-
-        //- Re-read model coefficients if they have changed
-        virtual bool read();
-
-        ///// Comment for fixed fK
-        // //- Access function to filter width
-        // inline const volScalarField& delta() const
-        // {
-        //     return *delta_;
-        // }
-
-        //- Return the effective diffusivity for unresolved k
-        tmp<volScalarField> DkUEff(const volScalarField& F1) const
-        {
-            return tmp<volScalarField>
-            (
-                new volScalarField
-                (
-                    "DkUEff",
-                    (fK_/fOmega_)*this->alphaK(F1)*this->nut_ + this->nu()
-                )
-            );
-        }
-
-        //- Return the effective diffusivity for unresolved omega
-        tmp<volScalarField> DomegaUEff(const volScalarField& F1) const
-        {
-            return tmp<volScalarField>
-            (
-                new volScalarField
-                (
-                    "DomegaUEff",
-                    (fK_/fOmega_)*this->alphaOmega(F1)*this->nut_ + this->nu()
-                )
-            );
-        }
-
-        //- Return the turbulence kinetic energy
-        virtual tmp<volScalarField> k() const
-        {
-            return this->k_;
-        }
-
-        //- Return the turbulence kinetic energy dissipation rate
-        virtual tmp<volScalarField> epsilon() const
-        {
-            return tmp<volScalarField>
-            (
-                new volScalarField
-                (
-                    IOobject
-                    (
-                        "epsilon",
-                        this->mesh_.time().timeName(),
-                        this->mesh_
-                    ),
-                    this->betaStar_*this->k_*this->omega_,
-                    this->omega_.boundaryField().types()
-                )
-            );
-        }
-
-        //- Return the turbulence kinetic energy dissipation rate
-        virtual tmp<volScalarField> omega() const
-        {
-            return this->omega_;
-        }
-
-
-        //- Return the unresolved turbulence kinetic energy
-        virtual tmp<volScalarField> kU() const
-        {
-            return kU_;
-        }
-
-        //- Return the turbulence kinetic energy dissipation rate
-        virtual tmp<volScalarField> omegaU() const
-        {
-            return omegaU_;
-        }
-
-        //- Solve the turbulence equations and correct the turbulence viscosity
-        virtual void correct();
-
 };
 
 
