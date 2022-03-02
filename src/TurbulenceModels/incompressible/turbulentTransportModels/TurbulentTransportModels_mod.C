@@ -29,23 +29,23 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-defineTurbulenceModelTypes
-(
-    geometricOneField,
-    geometricOneField,
-    incompressibleTurbulenceModel,
-    IncompressibleTurbulenceModel,
-    transportModel
-);
-
-makeBaseTurbulenceModel
-(
-    geometricOneField,
-    geometricOneField,
-    incompressibleTurbulenceModel,
-    IncompressibleTurbulenceModel,
-    transportModel
-);
+// defineTurbulenceModelTypes
+// (
+//     geometricOneField,
+//     geometricOneField,
+//     incompressibleTurbulenceModel,
+//     IncompressibleTurbulenceModel,
+//     transportModel
+// );
+//
+// makeBaseTurbulenceModel
+// (
+//     geometricOneField,
+//     geometricOneField,
+//     incompressibleTurbulenceModel,
+//     IncompressibleTurbulenceModel,
+//     transportModel
+// );
 
 
 // -------------------------------------------------------------------------- //

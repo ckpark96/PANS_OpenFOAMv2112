@@ -31,12 +31,12 @@ boundaryField
     upperWall
     {
         type            calculated;
-        value           $internalField;
+        value           uniform 1.0;
     }
     lowerWall
     {
         type            calculated;
-        value           $internalField;
+        value           uniform 1.0;
     }
     frontAndBack
     {

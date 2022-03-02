@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016 OpenFOAM Foundation
-    Copyright (C) 2019 OpenCFD Ltd.
+    Copyright (C) 2017-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -25,16 +25,11 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::RASModels::kOmegaSST
-
-Group
-    grpRASTurbulence
+    Foam::kOmegaSSTBase
 
 Description
-    Implementation of the k-omega-SST turbulence model for
+    Base class implementation of the k-omega-SST turbulence model for
     incompressible and compressible flows.
-
-    Light wrapper around base class.
 
     Turbulence model described in:
     \verbatim
@@ -60,13 +55,21 @@ Description
     and the addition of the optional F3 term for rough walls from
     \verbatim
         Hellsten, A. (1998).
-        "Some Improvements in Menter’s k-omega-SST turbulence model"
+        Some Improvements in Menter's k-omega-SST turbulence model
         29th AIAA Fluid Dynamics Conference, AIAA-98-2554.
+    \endverbatim
+
+    and the optional decay control from:
+    \verbatim
+        Spalart, P. R. and Rumsey, C. L. (2007).
+        Effective Inflow Conditions for Turbulence Models in Aerodynamic
+        Calculations
+        AIAA Journal, 45(10), 2544 - 2553.
     \endverbatim
 
     Note that this implementation is written in terms of alpha diffusion
     coefficients rather than the more traditional sigma (alpha = 1/sigma) so
-    that the blending can be applied to all coefficuients in a consistent
+    that the blending can be applied to all coefficients in a consistent
     manner.  The paper suggests that sigma is blended but this would not be
     consistent with the blending of the k-epsilon and k-omega models.
 
@@ -82,26 +85,31 @@ Description
 
     The default model coefficients are
     \verbatim
-        kOmegaSSTCoeffs
+        kOmegaSSTBaseCoeffs
         {
-            alphaK1     0.85;
-            alphaK2     1.0;
-            alphaOmega1 0.5;
-            alphaOmega2 0.856;
-            beta1       0.075;
-            beta2       0.0828;
-            betaStar    0.09;
-            gamma1      5/9;
-            gamma2      0.44;
-            a1          0.31;
-            b1          1.0;
-            c1          10.0;
-            F3          no;
+            alphaK1         0.85;
+            alphaK2         1.0;
+            alphaOmega1     0.5;
+            alphaOmega2     0.856;
+            beta1           0.075;
+            beta2           0.0828;
+            betaStar        0.09;
+            gamma1          5/9;
+            gamma2          0.44;
+            a1              0.31;
+            b1              1.0;
+            c1              10.0;
+            F3              no;
+
+            // Optional decay control
+            decayControl    yes;
+            kInf            \<far-field k value\>;
+            omegaInf        \<far-field omega value\>;
         }
     \endverbatim
 
 SourceFiles
-    kOmegaSST.C
+    PANSkOmegaSST.C
 
 SeeAlso
     kOmegaSSTBase.H
@@ -111,9 +119,8 @@ SeeAlso
 #ifndef PANSkOmegaSST_H
 #define PANSkOmegaSST_H
 
-#include "PANSkOmegaSSTBase.H"
-#include "RASModel.H"
-#include "eddyViscosity.H"
+#include "kOmegaSST.H"
+// #include "LESdelta.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -123,13 +130,13 @@ namespace RASModels
 {
 
 /*---------------------------------------------------------------------------*\
-                          Class kOmegaSST Declaration
+                     Class PANSkOmegaSST Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BasicTurbulenceModel>
 class PANSkOmegaSST
 :
-    public PANSkOmegaSSTBase<eddyViscosity<RASModel<BasicTurbulenceModel>>>
+    public kOmegaSST<BasicTurbulenceModel>
 {
     // Private Member Functions
 
@@ -142,10 +149,56 @@ class PANSkOmegaSST
 
 protected:
 
+    // Protected data
+
+        // Model constants
+
+            dimensionedScalar fEpsilon_;
+            // dimensionedScalar uLim_;
+            // dimensionedScalar loLim_;
+
+
+        // Fields
+
+            volScalarField fK_;
+            volScalarField fOmega_;
+            //- Run-time selectable delta model
+            // autoPtr<Foam::LESdelta> delta_;
+            volScalarField kU_;
+            volScalarField omegaU_;
+
+    // Private Member Functions
+
+        virtual tmp<volScalarField> F1(const volScalarField& CDkOmega) const;
+        virtual tmp<volScalarField> F2() const;
+        virtual tmp<volScalarField> F3() const;
+        virtual tmp<volScalarField> F23() const;
+
+        // void correctNut(const volScalarField& S2, const volScalarField& F2);
+        virtual void correctNut(const volScalarField& S2);
+
     // Protected Member Functions
 
-        virtual void correctNut(const volScalarField& S2);
         virtual void correctNut();
+
+        //- Return G/nu
+        virtual tmp<volScalarField::Internal> GbyNu
+        (
+            const volScalarField::Internal& GbyNu0,
+            const volScalarField::Internal& F2,
+            const volScalarField::Internal& S2
+        ) const;
+
+        virtual tmp<fvScalarMatrix> kSource() const;
+        virtual tmp<fvScalarMatrix> omegaSource() const;
+
+        //- PANS omega source
+        virtual tmp<fvScalarMatrix> Qsas
+        (
+            const volScalarField::Internal& S2,
+            const volScalarField::Internal& gamma,
+            const volScalarField::Internal& beta
+        ) const;
 
 
 public:
@@ -177,6 +230,92 @@ public:
 
     //- Destructor
     virtual ~PANSkOmegaSST() = default;
+
+
+    // Member Functions
+
+        //- Re-read model coefficients if they have changed
+        virtual bool read();
+
+        //- Access function to filter width
+        // inline const volScalarField& delta() const
+        // {
+        //     return *delta_;
+        // }
+
+        //- Return the effective diffusivity for unresolved k
+        tmp<volScalarField> DkUEff(const volScalarField& F1) const
+        {
+            return tmp<volScalarField>
+            (
+                new volScalarField
+                (
+                    "DkUEff",
+                    (fK_/fOmega_)*this->alphaK(F1)*this->nut_ + this->nu()
+                )
+            );
+        }
+
+        //- Return the effective diffusivity for unresolved omega
+        tmp<volScalarField> DomegaUEff(const volScalarField& F1) const
+        {
+            return tmp<volScalarField>
+            (
+                new volScalarField
+                (
+                    "DomegaUEff",
+                    (fK_/fOmega_)*this->alphaOmega(F1)*this->nut_ + this->nu()
+                )
+            );
+        }
+
+        //- Return the turbulence kinetic energy
+        virtual tmp<volScalarField> k() const
+        {
+            return this->k_;
+        }
+
+        //- Return the turbulence kinetic energy dissipation rate
+        virtual tmp<volScalarField> epsilon() const
+        {
+            return tmp<volScalarField>
+            (
+                new volScalarField
+                (
+                    IOobject
+                    (
+                        "epsilon",
+                        this->mesh_.time().timeName(),
+                        this->mesh_
+                    ),
+                    this->betaStar_*this->k_*this->omega_,
+                    this->omega_.boundaryField().types()
+                )
+            );
+        }
+
+        //- Return the turbulence kinetic energy dissipation rate
+        virtual tmp<volScalarField> omega() const
+        {
+            return this->omega_;
+        }
+
+
+        //- Return the unresolved turbulence kinetic energy
+        virtual tmp<volScalarField> kU() const
+        {
+            return kU_;
+        }
+
+        //- Return the turbulence kinetic energy dissipation rate
+        virtual tmp<volScalarField> omegaU() const
+        {
+            return omegaU_;
+        }
+
+        //- Solve the turbulence equations and correct the turbulence viscosity
+        virtual void correct();
+
 };
 
 
@@ -186,11 +325,13 @@ public:
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #ifdef NoRepository
     #include "PANSkOmegaSST.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #endif
 
 // ************************************************************************* //

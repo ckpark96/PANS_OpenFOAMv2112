@@ -35,12 +35,12 @@ boundaryField
     upperWall
     {
         type            calculated;
-        value           uniform 0.3;
+        value           uniform 1;
     }
     lowerWall
     {
         type            calculated;
-        value           uniform 0.3;
+        value           uniform 1;
     }
     frontAndBack
     {
