@@ -27,11 +27,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "PANSkOmegaSST.H"
-#include <iostream>
-#include <stdio.h>
-#include <iomanip>
-#include <cmath>
-#include <limits>
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -271,9 +267,7 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
             IOobject::MUST_READ,
             IOobject::AUTO_WRITE
         ),
-        // this->k_*fK_
         this->mesh_
-        // this->k_.boundaryField().types()
     ),
 
     omegaU_
@@ -286,19 +280,11 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
             IOobject::MUST_READ,
             IOobject::AUTO_WRITE
         ),
-        // this->omega_*fOmega_
         this->mesh_
-        // this->omega_.boundaryField().types()
     )
 {
     bound(kU_, min(fK_)*this->kMin_);
     bound(omegaU_, min(fOmega_)*this->omegaMin_);
-    // bound(kU_, dimensionedScalar("minkU", dimensionSet(0,2,-2,0,0,0,0), SMALL));
-    // std::cout << "Bound 1" << "\n";
-    // std::cout << "omegaMin is" << "\n";
-    // printf("%16.16lf", this->omegaMin_);
-    // bound(omegaU_, dimensionedScalar("minOmegaU", dimensionSet(0,0,-1,0,0,0,0), SMALL));
-    // std::cout << "Bound 1 end" << "\n";
 
     if (type == typeName)
     {
@@ -306,7 +292,6 @@ PANSkOmegaSST<BasicTurbulenceModel>::PANSkOmegaSST
         this->printCoeffs(type);
     }
 }
-
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
@@ -316,8 +301,6 @@ bool PANSkOmegaSST<BasicTurbulenceModel>::read()
     if (kOmegaSST<BasicTurbulenceModel>::read())
     {
         fEpsilon_.readIfPresent(this->coeffDict());
-        // uLim_.readIfPresent(this->coeffDict());
-        // loLim_.readIfPresent(this->coeffDict());
 
         return true;
     }
@@ -343,28 +326,25 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
     volScalarField& nut = this->nut_;
     fv::options& fvOptions(fv::options::New(this->mesh_));
 
-    //eddyViscosity<RASModel<BasicTurbulenceModel> >::correct();
     BasicTurbulenceModel::correct();
 
     volScalarField divU(fvc::div(fvc::absolute(this->phi(), U)));
 
     tmp<volTensorField> tgradU = fvc::grad(U);
     volScalarField S2(2*magSqr(symm(tgradU())));
-    // volScalarField::Internal GbyNu((tgradU() && dev(twoSymm(tgradU()))));
     volScalarField::Internal GbyNu0
     (
         this->type() + ":GbyNu",
         (tgradU() && dev(twoSymm(tgradU())))
     );
     volScalarField::Internal G(this->GName(), nut*GbyNu0);
-    // tgradU.clear();
 
     // Update omegaU and G at the wall
     omegaU_.boundaryFieldRef().updateCoeffs();
 
     volScalarField CDkOmega
     (
-        (2*this->alphaOmega2_*(fK_/fOmega_))*
+        (2*this->alphaOmega2_*(fOmega_/fK_))*
         (fvc::grad(kU_) & fvc::grad(omegaU_))/omegaU_
     );
 
@@ -390,15 +370,6 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
           - fvm::laplacian(alpha*rho*DomegaUEff(F1), omegaU_)
          ==
             alpha()*rho()*gamma*GbyNu0
-           //  alpha*rho*gamma
-           // *min
-           //  (
-           //      GbyNu, (this->c1_/this->a1_)*this->betaStar_*omegaU_()
-           //      *max
-           //      (
-           //        this->a1_*omegaU_(), this->b1_*F23()*sqrt(S2())
-           //      )
-           //  )
           - fvm::SuSp((2.0/3.0)*alpha()*rho()*gamma*divU, omegaU_)
           - fvm::Sp(alpha()*rho()*betaL*omegaU_(), omegaU_)
           - fvm::SuSp
@@ -406,8 +377,8 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
                 alpha()*rho()*(F1() - scalar(1))*CDkOmega()/omegaU_(),
                 omegaU_
             )
-          + Qsas(S2, gamma, beta)
-          + omegaSource()
+          + Qsas(S2(), gamma, beta)
+          // + omegaSource()
           + fvOptions(alpha, rho, omegaU_)
         );
 
@@ -416,12 +387,7 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
         omegaUEqn.ref().boundaryManipulate(omegaU_.boundaryFieldRef());
         solve(omegaUEqn);
         fvOptions.correct(omegaU_);
-        // std::cout << "Bound 2" << "\n";
         bound(omegaU_, min(fOmega_)*this->omegaMin_);
-        // std::cout << "omegaMin is" << "\n";
-        // printf("%16.16lf", this->omegaMin_);
-        // bound(omegaU_, dimensionedScalar("minOmegaU", dimensionSet(0,0,-1,0,0,0,0), SMALL));
-        // std::cout << "Bound 2 end" << "\n";
 ;    }
 
     // Turbulent kinetic energy equation
@@ -431,7 +397,6 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
       + fvm::div(alphaRhoPhi, kU_)
       - fvm::laplacian(alpha*rho*DkUEff(F1), kU_)
      ==
-        // min(alpha*rho*G, (this->c1_*this->betaStar_)*alpha()*rho()*kU_()*omegaU_())
         alpha()*rho()*min(G, (this->c1_*this->betaStar_)*kU_()*omegaU_())
       - fvm::SuSp((2.0/3.0)*alpha()*rho()*divU, kU_)
       - fvm::Sp(alpha()*rho()*this->betaStar_*omegaU_, kU_)
@@ -446,28 +411,12 @@ void PANSkOmegaSST<BasicTurbulenceModel>::correct()
     solve(kUEqn);
     fvOptions.correct(kU_);
     bound(kU_, min(fK_)*this->kMin_);
-    // bound(kU_, dimensionedScalar("minkU", dimensionSet(0,2,-2,0,0,0,0), SMALL));
-    // std::cout << "kMin is" << "\n";
-    // printf("%16.16lf", this->kMin_);
 
 
     // Calculation of Turbulent kinetic energy and Frequency
     this->k_ = kU_/fK_;
-    // this->k_.correctBoundaryConditions();
-
     this->omega_ = omegaU_/fOmega_;
-    // this->omega_.correctBoundaryConditions();
 
-    // bound(this->k_, this->kMin_);
-    // bound(this->k_, dimensionedScalar("mink", dimensionSet(0,2,-2,0,0,0,0), SMALL));
-    // std::cout << "Bound 3" << "\n";
-    // bound(this->omega_, this->omegaMin_);
-    // bound(this->omega_, dimensionedScalar("minOmega", dimensionSet(0,0,-1,0,0,0,0), SMALL));
-    // std::cout << "Bound 3 end" << "\n";
-
-
-
-    // correctNut(S2, F23);
     correctNut(S2);
 
 }

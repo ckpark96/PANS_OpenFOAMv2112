@@ -120,7 +120,6 @@ SeeAlso
 #define PANSkOmegaSST_H
 
 #include "kOmegaSST.H"
-// #include "LESdelta.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -154,16 +153,11 @@ protected:
         // Model constants
 
             dimensionedScalar fEpsilon_;
-            // dimensionedScalar uLim_;
-            // dimensionedScalar loLim_;
-
 
         // Fields
 
             volScalarField fK_;
             volScalarField fOmega_;
-            //- Run-time selectable delta model
-            // autoPtr<Foam::LESdelta> delta_;
             volScalarField kU_;
             volScalarField omegaU_;
 
@@ -237,12 +231,6 @@ public:
         //- Re-read model coefficients if they have changed
         virtual bool read();
 
-        //- Access function to filter width
-        // inline const volScalarField& delta() const
-        // {
-        //     return *delta_;
-        // }
-
         //- Return the effective diffusivity for unresolved k
         tmp<volScalarField> DkUEff(const volScalarField& F1) const
         {
@@ -251,7 +239,7 @@ public:
                 new volScalarField
                 (
                     "DkUEff",
-                    (fK_/fOmega_)*this->alphaK(F1)*this->nut_ + this->nu()
+                    (fOmega_/fK_)*this->alphaK(F1)*this->nut_ + this->nu()
                 )
             );
         }
@@ -264,7 +252,7 @@ public:
                 new volScalarField
                 (
                     "DomegaUEff",
-                    (fK_/fOmega_)*this->alphaOmega(F1)*this->nut_ + this->nu()
+                    (fOmega_/fK_)*this->alphaOmega(F1)*this->nut_ + this->nu()
                 )
             );
         }
