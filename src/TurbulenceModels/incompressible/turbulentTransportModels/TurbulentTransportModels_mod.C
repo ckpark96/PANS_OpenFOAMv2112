@@ -63,6 +63,9 @@ makeRASModel(PANSkEpsilon);
 #include "PANSkOmegaSST.H"
 makeRASModel(PANSkOmegaSST);
 
+#include "frozenPANSkOmegaSST.H"
+makeRASModel(frozenPANSkOmegaSST);
+
 
 // -------------------------------------------------------------------------- //
 // LES models
