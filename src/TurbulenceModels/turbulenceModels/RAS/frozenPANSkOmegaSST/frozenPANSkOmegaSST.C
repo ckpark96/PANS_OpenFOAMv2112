@@ -577,7 +577,7 @@ void frozenPANSkOmegaSST<BasicTurbulenceModel>::correct()
     // Calculation of Turbulent kinetic energy and Frequency
     this->omega_ = omegaU_/fOmega_;
 
-    // Re-calculate eddy viscosity
+    // Re-calculate eddy viscosity (k/omega)
     correctNut(S2);
 
     // Calculate bijUDelta, the model correction term for RST equation
