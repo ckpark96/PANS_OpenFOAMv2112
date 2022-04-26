@@ -1,3 +1,0 @@
-pisoFoam_mod.C
-
-EXE = $(FOAM_USER_APPBIN)/pisoFoam_mod
