@@ -239,7 +239,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         this->mesh_
     ),
@@ -252,7 +252,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         fEpsilon_/fK_
     ),
@@ -266,7 +266,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         this->mesh_
     ),
@@ -278,7 +278,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         k_LES_ * fK_
     ),
@@ -290,7 +290,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         this->mesh_
     ),

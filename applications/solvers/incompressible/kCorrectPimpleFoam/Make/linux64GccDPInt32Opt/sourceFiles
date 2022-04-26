@@ -1,4 +1,4 @@
 SOURCE = \
-kCorrectPimpleFoam.C \
+frozenPimpleFoam.C \
 
 # sources

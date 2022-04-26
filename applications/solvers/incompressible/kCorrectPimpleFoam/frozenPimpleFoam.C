@@ -168,12 +168,12 @@ int main(int argc, char *argv[])
                 }
             }
 
-            #include "UEqn.H"
+            //#include "UEqn.H"
 
             // --- Pressure corrector loop
             while (pimple.correct())
             {
-                #include "pEqn.H"
+                //#include "pEqn.H"
             }
 
             if (pimple.turbCorr())

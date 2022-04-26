@@ -1,2 +1,2 @@
-kCorrectPimpleFoam.C
-EXE = $(FOAM_USER_APPBIN)/kCorrectPimpleFoam
+frozenPimpleFoam.C
+EXE = $(FOAM_USER_APPBIN)/frozenPimpleFoam
