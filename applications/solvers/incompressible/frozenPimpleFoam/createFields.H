@@ -1,7 +1,7 @@
 #include "createRDeltaT.H"
 
-Info<< "Reading field p\n" << endl;
-volScalarField p
+Info<< "Reading field p_LES\n" << endl;
+volScalarField p_LES
 (
     IOobject
     (
@@ -27,7 +27,7 @@ volVectorField U_LES
     ),
     mesh
 );
-// volScalarField &p = p_LES;  // As "U" is used in other #includes
+// volScalarField &p = p_LES;  // unused variable
 volVectorField &U = U_LES;  // As "U" is used in other #includes
 #include "createPhi.H"
 
