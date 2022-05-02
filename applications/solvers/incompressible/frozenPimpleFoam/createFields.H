@@ -1,11 +1,11 @@
 #include "createRDeltaT.H"
 
-Info<< "Reading field p_LES\n" << endl;
-volScalarField p_LES
+Info<< "Reading field p\n" << endl;
+volScalarField p
 (
     IOobject
     (
-        "p_LES",
+        "p",
         runTime.timeName(),
         mesh,
         IOobject::MUST_READ,
