@@ -870,5 +870,7 @@ $(WM_PROJECT_DIR)/src/TurbulenceModels/turbulenceModels/lnInclude/kOmegaSST.C \
 ../turbulenceModels/lnInclude/PANSkOmegaSST.C \
 ../turbulenceModels/lnInclude/frozenPANSkOmegaSST.H \
 ../turbulenceModels/lnInclude/frozenPANSkOmegaSST.C \
+../turbulenceModels/lnInclude/frozenInterpPANSkOmegaSST.H \
+../turbulenceModels/lnInclude/frozenInterpPANSkOmegaSST.C \
 
 #END

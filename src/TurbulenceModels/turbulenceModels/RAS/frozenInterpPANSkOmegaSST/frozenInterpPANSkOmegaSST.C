@@ -25,8 +25,9 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 \*---------------------------------------------------------------------------*/
-
-#include "frozenPANSkOmegaSST.H"
+#include <iostream>
+#include "frozenInterpPANSkOmegaSST.H"
+// #include "temporalInterpolate.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -38,7 +39,7 @@ namespace RASModels
 // * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * * //
 
 template<class BasicTurbulenceModel>
-tmp<volScalarField> frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST::F1
+tmp<volScalarField> frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST::F1
 (
     const volScalarField& CDkOmega
 ) const
@@ -69,7 +70,7 @@ tmp<volScalarField> frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaS
 
 template<class BasicTurbulenceModel>
 tmp<volScalarField>
-frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST::F2() const
+frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST::F2() const
 {
     tmp<volScalarField> arg2 = min
     (
@@ -86,7 +87,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST::F2() const
 
 template<class BasicTurbulenceModel>
 tmp<volScalarField>
-frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST::F3() const
+frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST::F3() const
 {
     tmp<volScalarField> arg3 = min
     (
@@ -98,7 +99,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST::F3() const
 }
 
 template<class BasicEddyViscosityModel>
-tmp<volScalarField> frozenPANSkOmegaSST<BasicEddyViscosityModel>::F23() const
+tmp<volScalarField> frozenInterpPANSkOmegaSST<BasicEddyViscosityModel>::F23() const
 {
     tmp<volScalarField> f23(F2());
 
@@ -112,7 +113,7 @@ tmp<volScalarField> frozenPANSkOmegaSST<BasicEddyViscosityModel>::F23() const
 
 
 template<class BasicTurbulenceModel>
-void frozenPANSkOmegaSST<BasicTurbulenceModel>::correctNut
+void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correctNut
 (
     const volScalarField& S2
     // const volScalarField& F2
@@ -127,14 +128,14 @@ void frozenPANSkOmegaSST<BasicTurbulenceModel>::correctNut
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 template<class BasicTurbulenceModel>
-void frozenPANSkOmegaSST<BasicTurbulenceModel>::correctNut()
+void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correctNut()
 {
     // correctNut(2*magSqr(symm(fvc::grad(this->U_))), this->F23());
     correctNut(2*magSqr(symm(fvc::grad(this->U_))));
 }
 
 template<class BasicEddyViscosityModel>
-tmp<volScalarField::Internal> frozenPANSkOmegaSST<BasicEddyViscosityModel>::GbyNu
+tmp<volScalarField::Internal> frozenInterpPANSkOmegaSST<BasicEddyViscosityModel>::GbyNu
 (
     const volScalarField::Internal& GbyNu0,
     const volScalarField::Internal& F2,
@@ -150,7 +151,7 @@ tmp<volScalarField::Internal> frozenPANSkOmegaSST<BasicEddyViscosityModel>::GbyN
 }
 
 template<class BasicTurbulenceModel>
-tmp<fvScalarMatrix> frozenPANSkOmegaSST<BasicTurbulenceModel>::kSource() const
+tmp<fvScalarMatrix> frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::kSource() const
 {
     return tmp<fvScalarMatrix>
     (
@@ -164,7 +165,7 @@ tmp<fvScalarMatrix> frozenPANSkOmegaSST<BasicTurbulenceModel>::kSource() const
 
 
 template<class BasicTurbulenceModel>
-tmp<fvScalarMatrix> frozenPANSkOmegaSST<BasicTurbulenceModel>::omegaSource() const
+tmp<fvScalarMatrix> frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::omegaSource() const
 {
     return tmp<fvScalarMatrix>
     (
@@ -177,7 +178,7 @@ tmp<fvScalarMatrix> frozenPANSkOmegaSST<BasicTurbulenceModel>::omegaSource() con
 }
 
 template<class BasicTurbulenceModel>
-tmp<fvScalarMatrix> frozenPANSkOmegaSST<BasicTurbulenceModel>::Qsas
+tmp<fvScalarMatrix> frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::Qsas
 (
     const volScalarField::Internal& S2,
     const volScalarField::Internal& gamma,
@@ -194,10 +195,43 @@ tmp<fvScalarMatrix> frozenPANSkOmegaSST<BasicTurbulenceModel>::Qsas
     );
 }
 
+// vectorField  readkU_LES;
+// fileName caseDir = "./0";
+// IFstream dataStream(caseDir/"k_LES_test");
+// dataStream >> readkU_LES;
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
+class customClass
+{
+public:
+  const float period_;
+  const float timeStep_;
+
+  customClass();
+  ~customClass();
+
+};
+
+customClass::customClass()
+:
+period_(0.00825617),
+timeStep_(1e-4)
+{
+    std::cout << "period = " << period_ << endl;
+    std::cout << "dt = " << timeStep_ << endl;
+}
+
+// auto [value1, value2] = searchBounds(pe, 1.125, times);
+
+customClass::~customClass()
+{}
+
+customClass myClass;
+auto times = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+
 template<class BasicTurbulenceModel>
-frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
+frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
 (
     const alphaField& alpha,
     const rhoField& rho,
@@ -221,6 +255,11 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
         type
     ),
 
+    currentTime_(this->runTime_.value()),
+    lowerIndex_(searchLowerBound(myClass.period_, currentTime_, times)),
+    preTime_(times[lowerIndex_]),
+    postTime_(times[lowerIndex_+1]),
+
     fEpsilon_
     (
         dimensioned<scalar>::getOrAddToDict
@@ -238,10 +277,12 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             IOobject::groupName("fK", alphaRhoPhi.group()),
             this->runTime_.timeName(),
             this->mesh_,
-            IOobject::MUST_READ,
+            IOobject::READ_IF_PRESENT, //MUST_READ,
             IOobject::NO_WRITE
         ),
-        this->mesh_
+        this->mesh_,
+        //temporalInterpolate(this->runTime_.value())
+        0.8
     ),
 
     fOmega_
@@ -258,6 +299,30 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
     ),
 
     //========================== LES fields ==============================
+    k_LES_pre_
+    (
+        IOobject
+        (
+            IOobject::groupName("k_LES", U.group()),
+            name(preTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
+    ),
+    k_LES_post_
+    (
+        IOobject
+        (
+            IOobject::groupName("k_LES", U.group()),
+            name(postTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
+    ),
     k_LES_
     (
         IOobject
@@ -265,11 +330,13 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             IOobject::groupName("k_LES", U.group()),
             this->runTime_.timeName(),
             this->mesh_,
-            IOobject::MUST_READ,
+            IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
-        this->mesh_
+        (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_ 
     ),
+
+
     kU_LES_
     (
         IOobject
@@ -281,7 +348,10 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
             IOobject::NO_WRITE
         ),
         k_LES_ * fK_
+        // temporalInterpolate()
+        // readkU_LES
     ),
+
     tauij_LES_
     (
         IOobject
@@ -447,7 +517,7 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BasicTurbulenceModel>
-bool frozenPANSkOmegaSST<BasicTurbulenceModel>::read()
+bool frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::read()
 {
     if (kOmegaSST<BasicTurbulenceModel>::read())
     {
@@ -462,7 +532,7 @@ bool frozenPANSkOmegaSST<BasicTurbulenceModel>::read()
 }
 
 template<class BasicTurbulenceModel>
-void frozenPANSkOmegaSST<BasicTurbulenceModel>::correct()
+void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
 {
     if (!this->turbulence_)
     {
@@ -566,6 +636,7 @@ void frozenPANSkOmegaSST<BasicTurbulenceModel>::correct()
     //   - kSource() and fvOptions() not included
 
     // kUDeficit_ refers to R term (correction term in kU-equation)
+
     kUDeficit_ = //  fvc::ddt(alpha, rho, k_LES_)
                   fvc::div(alphaRhoPhi, kU_LES_)
                 - fvc::laplacian(alpha*rho*DkUEff(F1), kU_LES_)
@@ -583,7 +654,24 @@ void frozenPANSkOmegaSST<BasicTurbulenceModel>::correct()
     // Calculate bijUDelta, the model correction term for RST equation
     bijUDelta_ = bijU_LES_ + nut / kU_LES_ * symm(fvc::grad(this->U_));
 
+    // word tim=this->runTime_.timeName();
+    // float tim2 = this->runTime_.value();
+    // word tim3 = name(tim2);
+    //
+    // // Foam::word tim=this->runTime_.timeName();
+    // temporalInterpolate(tim2);
+    // temporalInterpolate(tim3);
 
+    customClass myClass;
+    float pe = myClass.period_;
+    printStuff(pe);
+    // auto times = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+    // printStuff(times);
+    // auto [value1, value2] = searchBounds(pe, 1.125, times);
+    // printStuff(value1);
+    // printStuff(value2);
+
+    //
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

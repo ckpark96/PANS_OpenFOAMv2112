@@ -66,6 +66,9 @@ makeRASModel(PANSkOmegaSST);
 #include "frozenPANSkOmegaSST.H"
 makeRASModel(frozenPANSkOmegaSST);
 
+#include "frozenInterpPANSkOmegaSST.H"
+makeRASModel(frozenInterpPANSkOmegaSST);
+
 
 // -------------------------------------------------------------------------- //
 // LES models
