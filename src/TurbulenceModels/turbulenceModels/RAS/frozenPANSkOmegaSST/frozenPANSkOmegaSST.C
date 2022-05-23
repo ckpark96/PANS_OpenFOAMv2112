@@ -360,8 +360,9 @@ frozenPANSkOmegaSST<BasicTurbulenceModel>::frozenPANSkOmegaSST
 
     kUDeficit_
     (
-        IOobject(
-	    "kUDeficit",
+        IOobject
+        (
+            "kUDeficit",
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::NO_READ,

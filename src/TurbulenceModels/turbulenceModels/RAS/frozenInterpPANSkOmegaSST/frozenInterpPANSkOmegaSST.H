@@ -193,6 +193,27 @@ double round_up(double value, int decimal_places)
     return std::ceil(value * multiplier) / multiplier;
 }
 
+// Search for the smallest time in that is larger than the instantaneous time
+int searchLowerBound(double per, double val, std::vector<double> vec)
+{
+  double remain;
+  Info << "\nTIMES: " << vec << endl;
+  int lowerBoundIndex = 0;
+  for(std::size_t i = 0; i < vec.size(); ++i)
+    {
+      remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
+      if (vec[i] > remain)
+      // if (vec[i] > val)
+      {
+        // Info<< "\nvec[i]: " << round_up(vec[i],4) << endl;
+        // Info<< "\nval: " << round_up(val,6) << endl;
+        lowerBoundIndex = i-1;
+        break;
+      }
+    }
+  return lowerBoundIndex;
+}
+
 // struct prePost
 // {
 //   double preTime, postTime;
@@ -216,22 +237,6 @@ double round_up(double value, int decimal_places)
 //     }
 //   return result;
 // }
-
-int searchLowerBound(double per, double val, std::vector<double> vec)
-{
-  double remain;
-  int lowerBoundIndex = 0;
-  for(std::size_t i = 0; i < vec.size(); ++i)
-    {
-      remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
-      if (vec[i] >= remain)
-      {
-        lowerBoundIndex = i;
-        break;
-      }
-    }
-  return lowerBoundIndex;
-}
 
 // float period = 0.00825617;
 // float timeStep = 1e-4;
@@ -269,6 +274,9 @@ protected:
 
     // Protected data
         // Misc
+           // double period_;
+           // double timeStep_;
+           // vector<double> times_hifi_;
            double currentTime_;
            // vector dataTimes_;
            int lowerIndex_;
@@ -288,6 +296,8 @@ protected:
               volScalarField k_LES_post_;
               volScalarField k_LES_;
               volScalarField kU_LES_;
+              volSymmTensorField tauij_LES_pre_;
+              volSymmTensorField tauij_LES_post_;
               volSymmTensorField tauij_LES_;
               volSymmTensorField tauijU_LES_;
               volSymmTensorField aijU_LES_;

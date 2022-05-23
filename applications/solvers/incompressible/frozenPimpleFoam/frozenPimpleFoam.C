@@ -74,6 +74,7 @@ Note
 
 \*---------------------------------------------------------------------------*/
 
+#include "vector"
 #include "fvCFD.H"
 #include "dynamicFvMesh.H"
 #include "singlePhaseTransportModel.H"
@@ -84,10 +85,90 @@ Note
 #include "localEulerDdtScheme.H"
 #include "fvcSmooth.H"
 
+//--------------------------OWN STUFF------------------------//
+
+// Similar to numpy.arange()
+template<typename T>
+std::vector<T> arange(T start, T stop, T step)
+{
+    std::vector<T> values;
+    for (T value = start; value < stop; value += step)
+        values.push_back(value);
+    return values;
+}
+
+// Round double to certain decimal places
+double round_up(double value, int decimal_places)
+{
+    const double multiplier = std::pow(10.0, decimal_places);
+    return std::ceil(value * multiplier) / multiplier;
+}
+
+// Search for the smallest time in that is larger than the instantaneous time
+int searchLowerBound(double per, double val, std::vector<double> vec)
+{
+  double remain;
+  int lowerBoundIndex = 0;
+  for(std::size_t i = 0; i < vec.size(); ++i)
+    {
+      remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
+      if (vec[i] > remain)
+      {
+        Info << "vec[i]: " << vec[i] << endl;
+        Info << "val: " << val << endl;
+        lowerBoundIndex = i-1;
+        break;
+      }
+    }
+  return lowerBoundIndex;
+}
+
+class customClass
+{
+public:
+  const float period_;
+  const float timeStep_;
+  double currentTime_;
+  int lowerIndex_;
+  double preTime_;
+  double postTime_;
+
+  customClass();
+  ~customClass();
+
+};
+
+customClass::customClass()
+:
+period_(0.00825617),
+timeStep_(1e-4),
+currentTime_(0.0),
+lowerIndex_(0)
+{
+    std::cout << "period = " << period_ << endl;
+    std::cout << "\ndt = " << timeStep_ << endl;
+}
+
+customClass::~customClass()
+{}
+
+customClass myClass;
+// auto times_hifi = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+auto times_hifi = arange<double>(round_up(myClass.timeStep_,4), round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
+    times_hifi.insert(times_hifi.begin(),1e-9);
+    times_hifi.insert(times_hifi.begin(),0);
+    std::cout << typeid(times_hifi).name() << '\n';
+    Info << "\nTIMES: "<< times_hifi << endl;
+    // Initialise the preTime and postTime
+    Info << "\nThis should only be printed once" << endl;
+    myClass.preTime_ = times_hifi[0];
+    myClass.postTime_ = times_hifi[1];
+
     argList::addNote
     (
         "Transient solver for incompressible, turbulent flow"
@@ -98,7 +179,7 @@ int main(int argc, char *argv[])
 
     #include "addCheckCaseOptions.H"
     #include "setRootCaseLists.H"
-    #include "createTime.H"
+    #include "createTime.H" // runTime initialised
     #include "createDynamicFvMesh.H"
     #include "initContinuityErrs.H"
     #include "createDyMControls.H"
@@ -114,6 +195,8 @@ int main(int argc, char *argv[])
         #include "CourantNo.H"
         #include "setInitialDeltaT.H"
     }
+
+    Info << "\nTESTING TESTING TESTING" << endl;
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -137,9 +220,21 @@ int main(int argc, char *argv[])
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
+        myClass.currentTime_ = runTime.value();
+        myClass.lowerIndex_ = searchLowerBound(myClass.period_, myClass.currentTime_, times_hifi);
+        myClass.preTime_ = times_hifi[myClass.lowerIndex_];
+        myClass.postTime_ = times_hifi[myClass.lowerIndex_+1];
+
+        Info<< "\n myClass.currentTime = " << myClass.currentTime_ << endl;
+        Info<< "\n myClass.preTime_: " << myClass.preTime_ << endl;
+        Info<< "\n myClass.postTime_: " << myClass.postTime_ << endl;
+
+
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
+
+
             if (pimple.firstIter() || moveMeshOuterCorrectors)
             {
                 // Do any mesh changes
@@ -168,13 +263,63 @@ int main(int argc, char *argv[])
                 }
             }
 
-            //#include "UEqn.H"
+            // #include "UEqn.H"
+            Info<< "Reading field U_LES_pre" << endl;
+
+            volVectorField U_LES_pre
+            (
+                IOobject
+                (
+                    "U_LES",
+                    name(myClass.preTime_),
+                    mesh,
+                    IOobject::MUST_READ,
+                    IOobject::NO_WRITE
+                ),
+                mesh
+            );
+            Info<< "Reading field U_LES_post" << endl;
+
+            volVectorField U_LES_post
+            (
+                IOobject
+                (
+                    "U_LES",
+                    name(myClass.postTime_),
+                    mesh,
+                    IOobject::MUST_READ,
+                    IOobject::NO_WRITE
+                ),
+                mesh
+            );
+
+            Info<< "Calculating field U_LES" << endl;
+            // Info<< "myClass.postTime_: " << myClass.postTime_ << endl;
+            // Info<< "myClass.preTime_: " << myClass.preTime_ << endl;
+            // Info<< "myClass.currentTime_: " << myClass.currentTime_ << endl;
+
+            volVectorField U_LES
+            (
+                IOobject
+                (
+                    "U_LES",
+                    runTime.timeName(),
+                    mesh,
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
+                ),
+                (U_LES_post - U_LES_pre) / (myClass.postTime_ - myClass.preTime_) * (myClass.currentTime_ - myClass.preTime_) + U_LES_pre
+            );
+            Info<< "DONE Calculating field U_LES\n" << endl;
+
+            // volScalarField &p = p_LES;  // unused variable
+            // volVectorField &U = U_LES;  // As "U" is used in other #includes
 
             // --- Pressure corrector loop
-            while (pimple.correct())
-            {
-                //#include "pEqn.H"
-            }
+            // while (pimple.correct())
+            // {
+            //     //#include "pEqn.H"
+            // }
 
             if (pimple.turbCorr())
             {

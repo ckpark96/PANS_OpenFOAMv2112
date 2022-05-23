@@ -25,6 +25,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 \*---------------------------------------------------------------------------*/
+#include <vector>
 #include <iostream>
 #include "frozenInterpPANSkOmegaSST.H"
 // #include "temporalInterpolate.H"
@@ -207,6 +208,7 @@ class customClass
 public:
   const float period_;
   const float timeStep_;
+  std::vector<double> times_hifi_;
 
   customClass();
   ~customClass();
@@ -216,10 +218,15 @@ public:
 customClass::customClass()
 :
 period_(0.00825617),
-timeStep_(1e-4)
+timeStep_(1e-4),
+times_hifi_(arange<double>(round_up(timeStep_,4), round_up(period_,4), round_up(timeStep_,4)))
+// times_hifi_()
+// times_hifi_(0.0 0.000000001 0.0001 0.0002 0.0003 0.0004 0.0005 0.0006 0.0007 0.0008 0.0009 0.001 0.0011 0.0012 0.0013 0.0014 0.0015 0.0016 0.0017 0.0018 0.0019 0.002 0.0021 0.0022 0.0023 0.0024 0.0025 0.0026 0.0027 0.0028 0.0029 0.003 0.0031 0.0032 0.0033 0.0034 0.0035 0.0036 0.0037 0.0038 0.0039 0.004 0.0041 0.0042 0.0043 0.0044 0.0045 0.0046 0.0047 0.0048 0.0049 0.005 0.0051 0.0052 0.0053 0.0054 0.0055 0.0056 0.0057 0.0058 0.0059 0.006 0.0061 0.0062 0.0063 0.0064 0.0065 0.0066 0.0067 0.0068 0.0069 0.007 0.0071 0.0072 0.0073 0.0074 0.0075 0.0076 0.0077 0.0078 0.0079 0.008 0.0081 0.0082 )
 {
-    std::cout << "period = " << period_ << endl;
-    std::cout << "dt = " << timeStep_ << endl;
+    times_hifi_.insert(times_hifi_.begin(),1e-9);
+    times_hifi_.insert(times_hifi_.begin(),0);
+    Info << "checking TIMES: " << times_hifi_ << endl;
+    // std::cout << "dt = " << timeStep_ << endl;
 }
 
 // auto [value1, value2] = searchBounds(pe, 1.125, times);
@@ -228,7 +235,11 @@ customClass::~customClass()
 {}
 
 customClass myClass;
-auto times = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+// auto times = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+// auto times_hifi_ = arange<double>(round_up(myClass.timeStep_,4), round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+// times_hifi_.insert(times_hifi.begin(),1e-9);
+// times_hifi_.insert(times_hifi.begin(),0);
+// myClass.times_hifi_ = { 0.0 0.000000001 0.0001 0.0002 0.0003 0.0004 0.0005 0.0006 0.0007 0.0008 0.0009 0.001 0.0011 0.0012 0.0013 0.0014 0.0015 0.0016 0.0017 0.0018 0.0019 0.002 0.0021 0.0022 0.0023 0.0024 0.0025 0.0026 0.0027 0.0028 0.0029 0.003 0.0031 0.0032 0.0033 0.0034 0.0035 0.0036 0.0037 0.0038 0.0039 0.004 0.0041 0.0042 0.0043 0.0044 0.0045 0.0046 0.0047 0.0048 0.0049 0.005 0.0051 0.0052 0.0053 0.0054 0.0055 0.0056 0.0057 0.0058 0.0059 0.006 0.0061 0.0062 0.0063 0.0064 0.0065 0.0066 0.0067 0.0068 0.0069 0.007 0.0071 0.0072 0.0073 0.0074 0.0075 0.0076 0.0077 0.0078 0.0079 0.008 0.0081 0.0082 };
 
 template<class BasicTurbulenceModel>
 frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
@@ -254,11 +265,13 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
         propertiesName,
         type
     ),
-
+    // period_(0.00825617),
+    // timeStep_(1e-4),
+    // times_hifi_(arange<double>(round_up(timeStep_,4), round_up(period_,4), round_up(timeStep_,4))),
     currentTime_(this->runTime_.value()),
-    lowerIndex_(searchLowerBound(myClass.period_, currentTime_, times)),
-    preTime_(times[lowerIndex_]),
-    postTime_(times[lowerIndex_+1]),
+    lowerIndex_(searchLowerBound(myClass.period_, currentTime_, myClass.times_hifi_)),
+    preTime_(myClass.times_hifi_[lowerIndex_]),
+    postTime_(myClass.times_hifi_[lowerIndex_+1]),
 
     fEpsilon_
     (
@@ -277,12 +290,10 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             IOobject::groupName("fK", alphaRhoPhi.group()),
             this->runTime_.timeName(),
             this->mesh_,
-            IOobject::READ_IF_PRESENT, //MUST_READ,
+            IOobject::MUST_READ, //MUST_READ,
             IOobject::NO_WRITE
         ),
-        this->mesh_,
-        //temporalInterpolate(this->runTime_.value())
-        0.8
+        this->mesh_
     ),
 
     fOmega_
@@ -333,7 +344,7 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
-        (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_ 
+        (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_
     ),
 
 
@@ -348,8 +359,30 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             IOobject::NO_WRITE
         ),
         k_LES_ * fK_
-        // temporalInterpolate()
-        // readkU_LES
+    ),
+    tauij_LES_pre_
+    (
+        IOobject
+        (
+            "tauij_LES",
+            name(preTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
+    ),
+    tauij_LES_post_
+    (
+        IOobject
+        (
+            "tauij_LES",
+            name(postTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
     ),
 
     tauij_LES_
@@ -359,10 +392,10 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             "tauij_LES",
             this->runTime_.timeName(),
             this->mesh_,
-            IOobject::MUST_READ,
+            IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
-        this->mesh_
+        (tauij_LES_post_ - tauij_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + tauij_LES_pre_
     ),
     tauijU_LES_
     (
@@ -507,6 +540,9 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
     bound(kU_LES_, min(fK_)*this->kMin_);
     bound(omegaU_, min(fOmega_)*this->omegaMin_);
 
+    Info<< "\n name(postTime_),: " << name(postTime_) << endl;
+    Info<< "\n name(preTime_),: " << name(preTime_) << endl;
+
     if (type == typeName)
     {
         correctNut();
@@ -549,9 +585,50 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
 
     BasicTurbulenceModel::correct();
 
+    // k_LES_pre_
+    // (
+    //     IOobject
+    //     (
+    //         IOobject::groupName("k_LES", U.group()),
+    //         name(preTime_),
+    //         this->mesh_,
+    //         IOobject::MUST_READ,
+    //         IOobject::NO_WRITE
+    //     ),
+    //     this->mesh_
+    // );
+    // k_LES_post_
+    // (
+    //     IOobject
+    //     (
+    //         IOobject::groupName("k_LES", U.group()),
+    //         name(postTime_),
+    //         this->mesh_,
+    //         IOobject::MUST_READ,
+    //         IOobject::NO_WRITE
+    //     ),
+    //     this->mesh_
+    // );
+    //
+    // Info << "Calculating k_LES" << endl;
+    // k_LES_
+    // (
+    //     IOobject
+    //     (
+    //         IOobject::groupName("k_LES", U.group()),
+    //         this->runTime_.timeName(),
+    //         this->mesh_,
+    //         IOobject::NO_READ,
+    //         IOobject::NO_WRITE
+    //     ),
+    //     (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_
+    // );
 
+    eddyViscosity<RASModel<BasicTurbulenceModel>>::correct();
     // This is the current iteration, 1000, etc.
     const dimensionedScalar time = this->runTime_;
+    Info << "runTime: " << this->runTime_.value() << endl;
+
 
     volScalarField divU(fvc::div(fvc::absolute(this->phi(), U)));
 
@@ -592,7 +669,6 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
             + (beta/fOmega_)
         );
         GbyNu0 = GbyNu(GbyNu0, F23(), S2());
-
 
         // Unresolved Turbulent frequency equation
         tmp<fvScalarMatrix> omegaUEqn
@@ -662,9 +738,9 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
     // temporalInterpolate(tim2);
     // temporalInterpolate(tim3);
 
-    customClass myClass;
-    float pe = myClass.period_;
-    printStuff(pe);
+    // customClass myClass;
+    // float pe = myClass.period_;
+    // printStuff(pe);
     // auto times = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
     // printStuff(times);
     // auto [value1, value2] = searchBounds(pe, 1.125, times);
