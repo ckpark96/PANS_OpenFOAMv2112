@@ -28,7 +28,6 @@ License
 #include <vector>
 #include <iostream>
 #include "frozenInterpPANSkOmegaSST.H"
-// #include "temporalInterpolate.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -57,11 +56,11 @@ tmp<volScalarField> frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInter
         (
             max
             (
-                (scalar(1)/this->betaStar_)*sqrt(kU_LES_)/(omegaU_*this->y_),
-                scalar(500)*(this->mu()/this->rho_)/(sqr(this->y_)*omegaU_)
+                (scalar(1)/betaStar_)*sqrt(kU_LES_)/(omegaU_*y_),
+                scalar(500)*(this->mu()/this->rho_)/(sqr(y_)*omegaU_)
             ),
-            (4*this->alphaOmega2_*(fK_/fOmega_))*kU_LES_
-            /(CDkOmegaPlus*sqr(this->y_))
+            (4*alphaOmega2_*(fK_/fOmega_))*kU_LES_
+            /(CDkOmegaPlus*sqr(y_))
         ),
         scalar(10)
     );
@@ -77,8 +76,8 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST::F2()
     (
         max
         (
-            (scalar(2)/this->betaStar_)*sqrt(kU_LES_)/(omegaU_*this->y_),
-            scalar(500)*(this->mu()/this->rho_)/(sqr(this->y_)*omegaU_)
+            (scalar(2)/betaStar_)*sqrt(kU_LES_)/(omegaU_*y_),
+            scalar(500)*(this->mu()/this->rho_)/(sqr(y_)*omegaU_)
         ),
         scalar(100)
     );
@@ -92,7 +91,7 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST::F3()
 {
     tmp<volScalarField> arg3 = min
     (
-        150*(this->mu()/this->rho_)/(omegaU_*sqr(this->y_)),
+        150*(this->mu()/this->rho_)/(omegaU_*sqr(y_)),
         scalar(10)
     );
 
@@ -104,9 +103,9 @@ tmp<volScalarField> frozenInterpPANSkOmegaSST<BasicEddyViscosityModel>::F23() co
 {
     tmp<volScalarField> f23(F2());
 
-    if (this->F3_)
+    if (F3_)
     {
-        f23.ref() *= this->F3();
+        f23.ref() *= F3();
     }
 
     return f23;
@@ -120,9 +119,11 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correctNut
     // const volScalarField& F2
 )
 {
-    this->nut_ = this->a1_*kU_LES_/max(this->a1_*omegaU_, this->b1_*F23()*sqrt(S2));
+    this->nut_ = a1_*kU_LES_/max(a1_*omegaU_, b1_*F23()*sqrt(S2));
     this->nut_.correctBoundaryConditions();
     fv::options::New(this->mesh_).correct(this->nut_);
+
+    BasicTurbulenceModel::correctNut();
 
 }
 
@@ -146,8 +147,8 @@ tmp<volScalarField::Internal> frozenInterpPANSkOmegaSST<BasicEddyViscosityModel>
     return min
     (
         GbyNu0,
-        (this->c1_/this->a1_)*this->betaStar_*omegaU_()
-       *max(this->a1_*omegaU_(), this->b1_*F2*sqrt(S2))
+        (c1_/a1_)*betaStar_*omegaU_()
+       *max(a1_*omegaU_(), b1_*F2*sqrt(S2))
     );
 }
 
@@ -196,12 +197,9 @@ tmp<fvScalarMatrix> frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::Qsas
     );
 }
 
-// vectorField  readkU_LES;
-// fileName caseDir = "./0";
-// IFstream dataStream(caseDir/"k_LES_test");
-// dataStream >> readkU_LES;
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+/////////////// Custom function to aid in interpolation ///////////////
 
 class customClass
 {
@@ -219,27 +217,16 @@ customClass::customClass()
 :
 period_(0.00825617),
 timeStep_(1e-4),
-times_hifi_(arange<double>(round_up(timeStep_,4), round_up(period_,4), round_up(timeStep_,4)))
-// times_hifi_()
-// times_hifi_(0.0 0.000000001 0.0001 0.0002 0.0003 0.0004 0.0005 0.0006 0.0007 0.0008 0.0009 0.001 0.0011 0.0012 0.0013 0.0014 0.0015 0.0016 0.0017 0.0018 0.0019 0.002 0.0021 0.0022 0.0023 0.0024 0.0025 0.0026 0.0027 0.0028 0.0029 0.003 0.0031 0.0032 0.0033 0.0034 0.0035 0.0036 0.0037 0.0038 0.0039 0.004 0.0041 0.0042 0.0043 0.0044 0.0045 0.0046 0.0047 0.0048 0.0049 0.005 0.0051 0.0052 0.0053 0.0054 0.0055 0.0056 0.0057 0.0058 0.0059 0.006 0.0061 0.0062 0.0063 0.0064 0.0065 0.0066 0.0067 0.0068 0.0069 0.007 0.0071 0.0072 0.0073 0.0074 0.0075 0.0076 0.0077 0.0078 0.0079 0.008 0.0081 0.0082 )
+times_hifi_(arange<double>(0, round_up(period_,4), round_up(timeStep_,4)))
 {
-    times_hifi_.insert(times_hifi_.begin(),1e-9);
-    times_hifi_.insert(times_hifi_.begin(),0);
-    Info << "checking TIMES: " << times_hifi_ << endl;
-    // std::cout << "dt = " << timeStep_ << endl;
+    Info << "Declaring custom class" << endl;
 }
 
-// auto [value1, value2] = searchBounds(pe, 1.125, times);
 
 customClass::~customClass()
 {}
 
 customClass myClass;
-// auto times = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
-// auto times_hifi_ = arange<double>(round_up(myClass.timeStep_,4), round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
-// times_hifi_.insert(times_hifi.begin(),1e-9);
-// times_hifi_.insert(times_hifi.begin(),0);
-// myClass.times_hifi_ = { 0.0 0.000000001 0.0001 0.0002 0.0003 0.0004 0.0005 0.0006 0.0007 0.0008 0.0009 0.001 0.0011 0.0012 0.0013 0.0014 0.0015 0.0016 0.0017 0.0018 0.0019 0.002 0.0021 0.0022 0.0023 0.0024 0.0025 0.0026 0.0027 0.0028 0.0029 0.003 0.0031 0.0032 0.0033 0.0034 0.0035 0.0036 0.0037 0.0038 0.0039 0.004 0.0041 0.0042 0.0043 0.0044 0.0045 0.0046 0.0047 0.0048 0.0049 0.005 0.0051 0.0052 0.0053 0.0054 0.0055 0.0056 0.0057 0.0058 0.0059 0.006 0.0061 0.0062 0.0063 0.0064 0.0065 0.0066 0.0067 0.0068 0.0069 0.007 0.0071 0.0072 0.0073 0.0074 0.0075 0.0076 0.0077 0.0078 0.0079 0.008 0.0081 0.0082 };
 
 template<class BasicTurbulenceModel>
 frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
@@ -254,24 +241,137 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
     const word& type
 )
 :
-    kOmegaSST<BasicTurbulenceModel>
+    eddyViscosity<RASModel<BasicTurbulenceModel>>
     (
+        type,
         alpha,
         rho,
         U,
         alphaRhoPhi,
         phi,
         transport,
-        propertiesName,
-        type
+        propertiesName
     ),
-    // period_(0.00825617),
-    // timeStep_(1e-4),
-    // times_hifi_(arange<double>(round_up(timeStep_,4), round_up(period_,4), round_up(timeStep_,4))),
-    currentTime_(this->runTime_.value()),
-    lowerIndex_(searchLowerBound(myClass.period_, currentTime_, myClass.times_hifi_)),
-    preTime_(myClass.times_hifi_[lowerIndex_]),
-    postTime_(myClass.times_hifi_[lowerIndex_+1]),
+
+    alphaK1_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "alphaK1",
+            this->coeffDict_,
+            0.85
+        )
+    ),
+    alphaK2_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "alphaK2",
+            this->coeffDict_,
+            1.0
+        )
+    ),
+    alphaOmega1_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "alphaOmega1",
+            this->coeffDict_,
+            0.5
+        )
+    ),
+    alphaOmega2_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "alphaOmega2",
+            this->coeffDict_,
+            0.856
+        )
+    ),
+    gamma1_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "gamma1",
+            this->coeffDict_,
+            5.0/9.0
+        )
+    ),
+    gamma2_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "gamma2",
+            this->coeffDict_,
+            0.44
+        )
+    ),
+    beta1_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "beta1",
+            this->coeffDict_,
+            0.075
+        )
+    ),
+    beta2_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "beta2",
+            this->coeffDict_,
+            0.0828
+        )
+    ),
+    betaStar_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "betaStar",
+            this->coeffDict_,
+            0.09
+        )
+    ),
+    a1_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "a1",
+            this->coeffDict_,
+            0.31
+        )
+    ),
+    b1_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "b1",
+            this->coeffDict_,
+            1.0
+        )
+    ),
+    c1_
+    (
+        dimensioned<scalar>::getOrAddToDict
+        (
+            "c1",
+            this->coeffDict_,
+            10.0
+        )
+    ),
+    F3_
+    (
+        Switch::getOrAddToDict
+        (
+            "F3",
+            this->coeffDict_,
+            false
+        )
+    ),
+
+    y_(wallDist::New(this->mesh_).y()),
 
     fEpsilon_
     (
@@ -310,30 +410,6 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
     ),
 
     //========================== LES fields ==============================
-    k_LES_pre_
-    (
-        IOobject
-        (
-            IOobject::groupName("k_LES", U.group()),
-            name(preTime_),
-            this->mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        this->mesh_
-    ),
-    k_LES_post_
-    (
-        IOobject
-        (
-            IOobject::groupName("k_LES", U.group()),
-            name(postTime_),
-            this->mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        this->mesh_
-    ),
     k_LES_
     (
         IOobject
@@ -341,12 +417,11 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             IOobject::groupName("k_LES", U.group()),
             this->runTime_.timeName(),
             this->mesh_,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
         ),
-        (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_
+        this->mesh_
     ),
-
 
     kU_LES_
     (
@@ -360,30 +435,6 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
         ),
         k_LES_ * fK_
     ),
-    tauij_LES_pre_
-    (
-        IOobject
-        (
-            "tauij_LES",
-            name(preTime_),
-            this->mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        this->mesh_
-    ),
-    tauij_LES_post_
-    (
-        IOobject
-        (
-            "tauij_LES",
-            name(postTime_),
-            this->mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        this->mesh_
-    ),
 
     tauij_LES_
     (
@@ -392,10 +443,11 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             "tauij_LES",
             this->runTime_.timeName(),
             this->mesh_,
-            IOobject::NO_READ,
+            IOobject::MUST_READ,
             IOobject::NO_WRITE
         ),
-        (tauij_LES_post_ - tauij_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + tauij_LES_pre_
+        // (tauij_LES_post_ - tauij_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + tauij_LES_pre_
+        this->mesh_
     ),
     tauijU_LES_
     (
@@ -448,6 +500,18 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
     ),
 
     //========================== Unknown fields - MUST be written ============================
+    omega_
+    (
+        IOobject
+        (
+            IOobject::groupName("omega", alphaRhoPhi.group()),
+            this->runTime_.timeName(),
+            this->mesh_,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh_
+    ),
     omegaU_
     (
         IOobject
@@ -464,7 +528,7 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
     kUDeficit_
     (
         IOobject(
-	    "kUDeficit",
+	          "kUDeficit",
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::NO_READ,
@@ -488,17 +552,17 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
     ),
 
     //========================== Misc ============================
-    y_(
-       IOobject
-       (
-            "walldist",
-            this->runTime_.timeName(),
-            this->mesh_,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-       ),
-       wallDist::New(this->mesh_).y()
-    ),
+    // y_(
+    //    IOobject
+    //    (
+    //         "walldist",
+    //         this->runTime_.timeName(),
+    //         this->mesh_,
+    //         IOobject::NO_READ,
+    //         IOobject::AUTO_WRITE
+    //    ),
+    //    wallDist::New(this->mesh_).y()
+    // ),
     gradU_
     (
         IOobject
@@ -521,7 +585,7 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
-        fvc::grad(this->kU_LES_)  // Only compute once - k=k_LES is fixed in frozen
+        fvc::grad(kU_LES_)
     ),
     gradomegaU_
     (
@@ -537,17 +601,13 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
        dimensionedVector("gradomegaU", dimensionSet(0,-1,-1,0,0,0,0), Zero)
     )
 {
-    bound(kU_LES_, min(fK_)*this->kMin_);
-    bound(omegaU_, min(fOmega_)*this->omegaMin_);
-
-    Info<< "\n name(postTime_),: " << name(postTime_) << endl;
-    Info<< "\n name(preTime_),: " << name(preTime_) << endl;
-
     if (type == typeName)
     {
         correctNut();
         this->printCoeffs(type);
     }
+    bound(kU_LES_, min(fK_)*this->kMin_);
+    bound(omegaU_, min(fOmega_)*this->omegaMin_);
 }
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
@@ -555,8 +615,21 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
 template<class BasicTurbulenceModel>
 bool frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::read()
 {
-    if (kOmegaSST<BasicTurbulenceModel>::read())
+    if (eddyViscosity<RASModel<BasicTurbulenceModel>>::read())
     {
+        alphaK1_.readIfPresent(this->coeffDict());
+        alphaK2_.readIfPresent(this->coeffDict());
+        alphaOmega1_.readIfPresent(this->coeffDict());
+        alphaOmega2_.readIfPresent(this->coeffDict());
+        gamma1_.readIfPresent(this->coeffDict());
+        gamma2_.readIfPresent(this->coeffDict());
+        beta1_.readIfPresent(this->coeffDict());
+        beta2_.readIfPresent(this->coeffDict());
+        betaStar_.readIfPresent(this->coeffDict());
+        a1_.readIfPresent(this->coeffDict());
+        b1_.readIfPresent(this->coeffDict());
+        c1_.readIfPresent(this->coeffDict());
+        F3_.readIfPresent("F3", this->coeffDict());
         fEpsilon_.readIfPresent(this->coeffDict());
 
         return true;
@@ -575,6 +648,8 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
         return;
     }
 
+    Info << "current run TIME: " << this->runTime_.value() << endl;
+
     // Local references
     const alphaField& alpha = this->alpha_;
     const rhoField& rho = this->rho_;
@@ -583,52 +658,92 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
     volScalarField& nut = this->nut_;
     fv::options& fvOptions(fv::options::New(this->mesh_));
 
+    volScalarField& omegaU_ = this->omegaU_;
+    volScalarField& k_LES_ = this->k_LES_;
+    volScalarField& kU_LES_ = this->kU_LES_;
+
     BasicTurbulenceModel::correct();
 
-    // k_LES_pre_
-    // (
-    //     IOobject
-    //     (
-    //         IOobject::groupName("k_LES", U.group()),
-    //         name(preTime_),
-    //         this->mesh_,
-    //         IOobject::MUST_READ,
-    //         IOobject::NO_WRITE
-    //     ),
-    //     this->mesh_
-    // );
-    // k_LES_post_
-    // (
-    //     IOobject
-    //     (
-    //         IOobject::groupName("k_LES", U.group()),
-    //         name(postTime_),
-    //         this->mesh_,
-    //         IOobject::MUST_READ,
-    //         IOobject::NO_WRITE
-    //     ),
-    //     this->mesh_
-    // );
-    //
-    // Info << "Calculating k_LES" << endl;
-    // k_LES_
-    // (
-    //     IOobject
-    //     (
-    //         IOobject::groupName("k_LES", U.group()),
-    //         this->runTime_.timeName(),
-    //         this->mesh_,
-    //         IOobject::NO_READ,
-    //         IOobject::NO_WRITE
-    //     ),
-    //     (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_
-    // );
+    ////////////////// RE-READ FIELDS FOR NEW TIMESTEP ////////////////////
+
+    double currentTime_(this->runTime_.value());
+    int lowerIndex_(searchLowerBound(myClass.period_, currentTime_, myClass.times_hifi_));
+    double preTime_(myClass.times_hifi_[lowerIndex_]);
+    double postTime_(myClass.times_hifi_[lowerIndex_+1]);
+    Info << "preTime_: " << preTime_ <<endl;
+    Info << "postTime_: " << postTime_ <<endl;
+    Info << "Reading k_LES_pre" << endl;
+    volScalarField k_LES_pre_
+    (
+        IOobject
+        (
+            IOobject::groupName("k_LES", U.group()),
+            name(preTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
+    );
+
+    Info << "Reading k_LES_post" << endl;
+    volScalarField k_LES_post_
+    (
+        IOobject
+        (
+            IOobject::groupName("k_LES", U.group()),
+            name(postTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
+    );
+
+    Info << "Calculating k_LES and kU_LES" << endl;
+    k_LES_ = (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_;
+    kU_LES_ = k_LES_ * fK_;
+
+    Info << "Reading tauij_LES_pre" << endl;
+    volSymmTensorField tauij_LES_pre_
+    (
+        IOobject
+        (
+            "tauij_LES",
+            name(preTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
+    );
+
+    Info << "Reading tauij_LES_post" << endl;
+    volSymmTensorField tauij_LES_post_
+    (
+        IOobject
+        (
+            "tauij_LES",
+            name(postTime_),
+            this->mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh_
+    );
+
+    Info << "Calculating tauij_LES, tauijU_LES, aijU_LES, bijU_LES and gradkU_LES" << endl;
+    tauij_LES_ =(tauij_LES_post_ - tauij_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + tauij_LES_pre_;
+    tauijU_LES_ = tauij_LES_ * fK_ * fK_;
+    aijU_LES_ = tauijU_LES_ - ((2.0/3.0)*I)*kU_LES_;
+    bijU_LES_ = aijU_LES_ / 2.0 / (kU_LES_ + this->kMin_);
+    gradkU_LES_ = fvc::grad(kU_LES_);
+
+    ///////////////// END OF RE-READ /////////////////////
 
     eddyViscosity<RASModel<BasicTurbulenceModel>>::correct();
-    // This is the current iteration, 1000, etc.
     const dimensionedScalar time = this->runTime_;
-    Info << "runTime: " << this->runTime_.value() << endl;
-
+    Info << "Confirming runTime: " << this->runTime_.value() << endl;
 
     volScalarField divU(fvc::div(fvc::absolute(this->phi(), U)));
 
@@ -665,7 +780,7 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
         volScalarField::Internal beta(this->beta(F1));
         volScalarField::Internal betaL
         (
-            gamma*this->betaStar_ - (gamma *this->betaStar_/fOmega_)
+            gamma*betaStar_ - (gamma *betaStar_/fOmega_)
             + (beta/fOmega_)
         );
         GbyNu0 = GbyNu(GbyNu0, F23(), S2());
@@ -718,11 +833,11 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
                 - fvc::laplacian(alpha*rho*DkUEff(F1), kU_LES_)
                 - alpha()*rho()*PkULES_
                 //+ (2.0/3.0)*alpha*rho*divU*k_LES_ // Incompressible: divU = 0
-                + fvc::Sp(this->betaStar_*alpha*rho*omegaU_, kU_LES_); // betastar = C_mu
+                + fvc::Sp(betaStar_*alpha*rho*omegaU_, kU_LES_); // betastar = C_mu
 
 
     // Calculation of Turbulent kinetic energy and Frequency
-    this->omega_ = omegaU_/fOmega_;
+    omega_ = omegaU_/fOmega_;
 
     // Re-calculate eddy viscosity (k/omega)
     correctNut(S2);
@@ -730,24 +845,8 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
     // Calculate bijUDelta, the model correction term for RST equation
     bijUDelta_ = bijU_LES_ + nut / kU_LES_ * symm(fvc::grad(this->U_));
 
-    // word tim=this->runTime_.timeName();
-    // float tim2 = this->runTime_.value();
-    // word tim3 = name(tim2);
-    //
-    // // Foam::word tim=this->runTime_.timeName();
-    // temporalInterpolate(tim2);
-    // temporalInterpolate(tim3);
+    Info << "Last check: current time: " << this->runTime_.value() << endl;
 
-    // customClass myClass;
-    // float pe = myClass.period_;
-    // printStuff(pe);
-    // auto times = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
-    // printStuff(times);
-    // auto [value1, value2] = searchBounds(pe, 1.125, times);
-    // printStuff(value1);
-    // printStuff(value2);
-
-    //
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

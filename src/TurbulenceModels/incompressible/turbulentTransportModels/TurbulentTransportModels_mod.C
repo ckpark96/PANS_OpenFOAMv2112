@@ -57,6 +57,13 @@ License
 // RAS models
 // -------------------------------------------------------------------------- //
 
+//#include "kOmegaSST_mod.H"
+//makeRASModel(kOmegaSST_mod);
+
+//#include "TurbulenceModel_mod.H"
+
+//#include "eddyViscosity_mod.H"
+
 #include "PANSkEpsilon.H"
 makeRASModel(PANSkEpsilon);
 

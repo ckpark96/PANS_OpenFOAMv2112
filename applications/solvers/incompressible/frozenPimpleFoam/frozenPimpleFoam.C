@@ -74,7 +74,8 @@ Note
 
 \*---------------------------------------------------------------------------*/
 
-#include "vector"
+// #include "vector"
+
 #include "fvCFD.H"
 #include "dynamicFvMesh.H"
 #include "singlePhaseTransportModel.H"
@@ -114,8 +115,6 @@ int searchLowerBound(double per, double val, std::vector<double> vec)
       remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
       if (vec[i] > remain)
       {
-        Info << "vec[i]: " << vec[i] << endl;
-        Info << "val: " << val << endl;
         lowerBoundIndex = i-1;
         break;
       }
@@ -147,25 +146,23 @@ lowerIndex_(0)
 {
     std::cout << "period = " << period_ << endl;
     std::cout << "\ndt = " << timeStep_ << endl;
+    Info << "\nextra digit '1' is printed behind the floats but actual values remain" << endl;
 }
 
 customClass::~customClass()
 {}
 
 customClass myClass;
-// auto times_hifi = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
-auto times_hifi = arange<double>(round_up(myClass.timeStep_,4), round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
+auto times_hifi = arange<double>(0, round_up(myClass.period_,4), round_up(myClass.timeStep_,4));
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
-    times_hifi.insert(times_hifi.begin(),1e-9);
-    times_hifi.insert(times_hifi.begin(),0);
-    std::cout << typeid(times_hifi).name() << '\n';
+    // std::cout << typeid(times_hifi).name() << '\n';
     Info << "\nTIMES: "<< times_hifi << endl;
     // Initialise the preTime and postTime
-    Info << "\nThis should only be printed once" << endl;
+    Info << "\nThis should only be printed once\n" << endl;
     myClass.preTime_ = times_hifi[0];
     myClass.postTime_ = times_hifi[1];
 
@@ -176,7 +173,6 @@ int main(int argc, char *argv[])
     );
 
     #include "postProcess.H"
-
     #include "addCheckCaseOptions.H"
     #include "setRootCaseLists.H"
     #include "createTime.H" // runTime initialised
@@ -195,8 +191,6 @@ int main(int argc, char *argv[])
         #include "CourantNo.H"
         #include "setInitialDeltaT.H"
     }
-
-    Info << "\nTESTING TESTING TESTING" << endl;
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -225,16 +219,13 @@ int main(int argc, char *argv[])
         myClass.preTime_ = times_hifi[myClass.lowerIndex_];
         myClass.postTime_ = times_hifi[myClass.lowerIndex_+1];
 
-        Info<< "\n myClass.currentTime = " << myClass.currentTime_ << endl;
-        Info<< "\n myClass.preTime_: " << myClass.preTime_ << endl;
-        Info<< "\n myClass.postTime_: " << myClass.postTime_ << endl;
-
+        Info<< "myClass.currentTime = " << myClass.currentTime_ << endl;
+        Info<< "myClass.preTime_: " << myClass.preTime_ << endl;
+        Info<< "myClass.postTime_: " << myClass.postTime_ << endl;
 
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
-
-
             if (pimple.firstIter() || moveMeshOuterCorrectors)
             {
                 // Do any mesh changes
@@ -294,26 +285,8 @@ int main(int argc, char *argv[])
             );
 
             Info<< "Calculating field U_LES" << endl;
-            // Info<< "myClass.postTime_: " << myClass.postTime_ << endl;
-            // Info<< "myClass.preTime_: " << myClass.preTime_ << endl;
-            // Info<< "myClass.currentTime_: " << myClass.currentTime_ << endl;
-
-            volVectorField U_LES
-            (
-                IOobject
-                (
-                    "U_LES",
-                    runTime.timeName(),
-                    mesh,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                (U_LES_post - U_LES_pre) / (myClass.postTime_ - myClass.preTime_) * (myClass.currentTime_ - myClass.preTime_) + U_LES_pre
-            );
+            U_LES = (U_LES_post - U_LES_pre) / (myClass.postTime_ - myClass.preTime_) * (myClass.currentTime_ - myClass.preTime_) + U_LES_pre;
             Info<< "DONE Calculating field U_LES\n" << endl;
-
-            // volScalarField &p = p_LES;  // unused variable
-            // volVectorField &U = U_LES;  // As "U" is used in other #includes
 
             // --- Pressure corrector loop
             // while (pimple.correct())

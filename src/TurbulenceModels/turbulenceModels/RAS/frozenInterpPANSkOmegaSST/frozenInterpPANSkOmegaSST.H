@@ -133,40 +133,6 @@ namespace RASModels
 {
 
 // * * * * * * * * * * * * Custom Function(s)  * * * * * * * * * * * * //
-// if (t1.header0k())
-// {
-//   Info << "Reading k.\n" << endl;
-//   fieldType t1
-//   (
-//     IOobject
-//     (
-//       str(t1),
-//       this->runTime_.timeName(),
-//       this->mesh_,
-//       IOobject::MUST_REA
-//       IOobjectL::AUTO_WRITE
-//     ),
-//     this->mesh_
-//   );
-  // vectorField  readkU_LES;
-  // fileName caseDir = "./0";
-  // IFstream dataStream(caseDir/"k_LES_test");
-  // dataStream >> readkU_LES;
-  // return readkU_LES;
-
-// }
-// string line;
-// std::ifstream myfile ("./0/kU");
-// if (myfile.is_open()) // True if the file is present: open==present in c++
-// {
-//   while ( getline (myfile,line) )
-//   {
-//     std::cout << line << '\n';
-//   }
-//   myfile.close();
-// }
-
-// else std::cout << "Unable to open file";
 
 // Print stuffs for testing
 template<class Type>
@@ -194,16 +160,15 @@ double round_up(double value, int decimal_places)
 }
 
 // Search for the smallest time in that is larger than the instantaneous time
+// I'm aware the loop looks for upper bound but it is what it is
 int searchLowerBound(double per, double val, std::vector<double> vec)
 {
   double remain;
-  Info << "\nTIMES: " << vec << endl;
   int lowerBoundIndex = 0;
   for(std::size_t i = 0; i < vec.size(); ++i)
     {
       remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
       if (vec[i] > remain)
-      // if (vec[i] > val)
       {
         // Info<< "\nvec[i]: " << round_up(vec[i],4) << endl;
         // Info<< "\nval: " << round_up(val,6) << endl;
@@ -214,42 +179,6 @@ int searchLowerBound(double per, double val, std::vector<double> vec)
   return lowerBoundIndex;
 }
 
-// struct prePost
-// {
-//   double preTime, postTime;
-// };
-
-// prePost searchBounds(double per, double val, std::vector<double> vec)
-// {
-//   prePost result;
-//   double remain;
-//   printStuff(val);
-//   for(std::size_t i = 0; i < vec.size(); ++i)
-//     {
-//       remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
-//       if (vec[i] >= remain)
-//       {
-//         printStuff(remain);
-//         result.preTime = vec[i];
-//         result.postTime = vec[i+1];
-//         break;
-//       }
-//     }
-//   return result;
-// }
-
-// float period = 0.00825617;
-// float timeStep = 1e-4;
-//
-// auto times = arange<double>(0, period, timeStep);
-//
-//
-// template<class Type>
-// Type findTime(Type t)
-// {
-//
-// }
-
 
 
 /*---------------------------------------------------------------------------*\
@@ -259,7 +188,7 @@ int searchLowerBound(double per, double val, std::vector<double> vec)
 template<class BasicTurbulenceModel>
 class frozenInterpPANSkOmegaSST
 :
-    public kOmegaSST<BasicTurbulenceModel>
+    public eddyViscosity<RASModel<BasicTurbulenceModel>>
 {
     // Private Member Functions
 
@@ -277,27 +206,49 @@ protected:
            // double period_;
            // double timeStep_;
            // vector<double> times_hifi_;
-           double currentTime_;
-           // vector dataTimes_;
-           int lowerIndex_;
-           int upperIndex_;
-           double preTime_;
-           double postTime_;
+             // double currentTime_;
+             // // vector dataTimes_;
+             // int lowerIndex_;
+             // int upperIndex_;
+             // double preTime_;
+             // double postTime_;
+
+         // Model coefficients
+             dimensionedScalar alphaK1_;
+             dimensionedScalar alphaK2_;
+
+             dimensionedScalar alphaOmega1_;
+             dimensionedScalar alphaOmega2_;
+
+             dimensionedScalar gamma1_;
+             dimensionedScalar gamma2_;
+
+             dimensionedScalar beta1_;
+             dimensionedScalar beta2_;
+
+             dimensionedScalar betaStar_;
+
+             dimensionedScalar a1_;
+             dimensionedScalar b1_;
+             dimensionedScalar c1_;
+
+             Switch F3_;
+             volScalarField y_;
 
 
-        // PANS coefficients
+          // PANS coefficients
 
-            dimensionedScalar fEpsilon_;
-            volScalarField fK_;
-            volScalarField fOmega_;
+              dimensionedScalar fEpsilon_;
+              volScalarField fK_;
+              volScalarField fOmega_;
 
           // LES fields
-              volScalarField k_LES_pre_;
-              volScalarField k_LES_post_;
+              // volScalarField k_LES_pre_;
+              // volScalarField k_LES_post_;
               volScalarField k_LES_;
               volScalarField kU_LES_;
-              volSymmTensorField tauij_LES_pre_;
-              volSymmTensorField tauij_LES_post_;
+              // volSymmTensorField tauij_LES_pre_;
+              // volSymmTensorField tauij_LES_post_;
               volSymmTensorField tauij_LES_;
               volSymmTensorField tauijU_LES_;
               volSymmTensorField aijU_LES_;
@@ -305,9 +256,10 @@ protected:
               volScalarField PkULES_;
 
           // Fields to solve for
-
+              volScalarField omega_;
               volScalarField omegaU_;
-              volScalarField kUDeficit_;
+              // volScalarField kUDeficit_;
+              volScalarField::Internal kUDeficit_;
               volSymmTensorField bijUDelta_;
 
           // Misc fields
@@ -315,24 +267,78 @@ protected:
               //- Wall distance
               //  Note: different to wall distance in parent RASModel
               //  which is for near-wall cells only (TODO: check this)
-              volScalarField y_;
               volTensorField gradU_;  // Needed for output (to compute S, W etc.)
               volVectorField gradkU_LES_;
               volVectorField gradomegaU_;
 
     // Private Member Functions
+        void setDecayControl(const dictionary& dict);
 
         virtual tmp<volScalarField> F1(const volScalarField& CDkOmega) const;
         virtual tmp<volScalarField> F2() const;
         virtual tmp<volScalarField> F3() const;
         virtual tmp<volScalarField> F23() const;
 
+        tmp<volScalarField> blend
+        (
+            const volScalarField& F1,
+            const dimensionedScalar& psi1,
+            const dimensionedScalar& psi2
+        ) const
+        {
+            return F1*(psi1 - psi2) + psi2;
+        }
+
+        tmp<volScalarField::Internal> blend
+        (
+            const volScalarField::Internal& F1,
+            const dimensionedScalar& psi1,
+            const dimensionedScalar& psi2
+        ) const
+        {
+            return F1*(psi1 - psi2) + psi2;
+        }
+
+        tmp<volScalarField> alphaK(const volScalarField& F1) const
+        {
+            return blend(F1, alphaK1_, alphaK2_);
+        }
+
+        tmp<volScalarField> alphaOmega(const volScalarField& F1) const
+        {
+            return blend(F1, alphaOmega1_, alphaOmega2_);
+        }
+
+        tmp<volScalarField::Internal> beta
+        (
+            const volScalarField::Internal& F1
+        ) const
+        {
+            return tmp<volScalarField::Internal>::New
+              (
+                  this->type() + ":beta",
+                  blend(F1, beta1_, beta2_)
+              );
+        }
+
+        tmp<volScalarField::Internal> gamma
+        (
+            const volScalarField::Internal& F1
+        ) const
+        {
+          return tmp<volScalarField::Internal>::New
+            (
+                this->type() + ":gamma",
+                blend(F1, gamma1_, gamma2_)
+            );
+        }
+
         // void correctNut(const volScalarField& S2, const volScalarField& F2);
         virtual void correctNut(const volScalarField& S2);
 
-    // Protected Member Functions
-
         virtual void correctNut();
+
+    // Protected Member Functions
 
         //- Return G/nu
         virtual tmp<volScalarField::Internal> GbyNu
@@ -343,6 +349,7 @@ protected:
         ) const;
 
         virtual tmp<fvScalarMatrix> kSource() const;
+
         virtual tmp<fvScalarMatrix> omegaSource() const;
 
         //- PANS omega source
@@ -363,7 +370,6 @@ public:
 
     //- Runtime type information
     TypeName("frozenInterpPANSkOmegaSST");
-
 
     // Constructors
 
@@ -419,32 +425,32 @@ public:
         //- Return the turbulence kinetic energy
         virtual tmp<volScalarField> k() const
         {
-            return this->k_;
+            return this->k_LES_;
         }
 
         //- Return the turbulence kinetic energy dissipation rate
-        virtual tmp<volScalarField> epsilon() const
-        {
-            return tmp<volScalarField>
-            (
-                new volScalarField
-                (
-                    IOobject
-                    (
-                        "epsilon",
-                        this->mesh_.time().timeName(),
-                        this->mesh_
-                    ),
-                    this->betaStar_*this->k_*this->omega_,
-                    this->omega_.boundaryField().types()
-                )
-            );
-        }
+        // virtual tmp<volScalarField> epsilon() const
+        // {
+        //     return tmp<volScalarField>
+        //     (
+        //         new volScalarField
+        //         (
+        //             IOobject
+        //             (
+        //                 "epsilon",
+        //                 this->mesh_.time().timeName(),
+        //                 this->mesh_
+        //             ),
+        //             this->betaStar_*this->k_*this->omega_,
+        //             this->omega_.boundaryField().types()
+        //         )
+        //     );
+        // }
 
         //- Return the turbulence kinetic energy dissipation rate
         virtual tmp<volScalarField> omega() const
         {
-            return this->omega_;
+            return omega_;
         }
 
 
@@ -461,15 +467,15 @@ public:
         }
 
         //- Return the unresolved turbulence kinetic energy dissipation rate
-        virtual tmp<volScalarField> epsilonU() const
-        {
-            return volScalarField::New
-            (
-                "epsilon",
-                this->betaStar_*kU_LES_*omegaU_,
-                omegaU_.boundaryField().types()
-            );
-        }
+        // virtual tmp<volScalarField> epsilonU() const
+        // {
+        //     return volScalarField::New
+        //     (
+        //         "epsilon",
+        //         this->betaStar_*kU_LES_*omegaU_,
+        //         omegaU_.boundaryField().types()
+        //     );
+        // }
 
         //- Solve the turbulence equations and correct the turbulence viscosity
         virtual void correct();
