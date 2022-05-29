@@ -167,7 +167,8 @@ int searchLowerBound(double per, double val, std::vector<double> vec)
   int lowerBoundIndex = 0;
   for(std::size_t i = 0; i < vec.size(); ++i)
     {
-      remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
+      // remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
+      remain = fmod(val, per);
       if (vec[i] > remain)
       {
         // Info<< "\nvec[i]: " << round_up(vec[i],4) << endl;

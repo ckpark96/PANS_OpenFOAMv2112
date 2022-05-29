@@ -431,7 +431,7 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::NO_READ,
-            IOobject::NO_WRITE
+            IOobject::AUTO_WRITE
         ),
         k_LES_ * fK_
     ),
