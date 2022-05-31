@@ -418,7 +418,7 @@ frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::frozenInterpPANSkOmegaSST
             this->runTime_.timeName(),
             this->mesh_,
             IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         this->mesh_
     ),
@@ -667,9 +667,11 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
     ////////////////// RE-READ FIELDS FOR NEW TIMESTEP ////////////////////
 
     double currentTime_(this->runTime_.value());
-    int lowerIndex_(searchLowerBound(myClass.period_, currentTime_, myClass.times_hifi_));
+    int lowerIndex_(std::get<0>(searchBounds(myClass.period_, currentTime_, myClass.times_hifi_)));
+    int upperIndex_(std::get<1>(searchBounds(myClass.period_, currentTime_, myClass.times_hifi_)));
     double preTime_(myClass.times_hifi_[lowerIndex_]);
-    double postTime_(myClass.times_hifi_[lowerIndex_+1]);
+    double postTime_(myClass.times_hifi_[upperIndex_]);
+    double remainTime_(fmod(currentTime_,myClass.period_) - preTime_);
     Info << "preTime_: " << preTime_ <<endl;
     Info << "postTime_: " << postTime_ <<endl;
     Info << "Reading k_LES_pre" << endl;
@@ -701,7 +703,8 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
     );
 
     Info << "Calculating k_LES and kU_LES" << endl;
-    k_LES_ = (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_;
+    // k_LES_ = (k_LES_post_ - k_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + k_LES_pre_;
+    k_LES_ = (k_LES_post_ - k_LES_pre_) / myClass.timeStep_ * remainTime_ + k_LES_pre_;
     kU_LES_ = k_LES_ * fK_;
 
     Info << "Reading tauij_LES_pre" << endl;
@@ -733,7 +736,7 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
     );
 
     Info << "Calculating tauij_LES, tauijU_LES, aijU_LES, bijU_LES and gradkU_LES" << endl;
-    tauij_LES_ =(tauij_LES_post_ - tauij_LES_pre_) / (postTime_ - preTime_) * (currentTime_ - preTime_) + tauij_LES_pre_;
+    tauij_LES_ =(tauij_LES_post_ - tauij_LES_pre_) / myClass.timeStep_ * remainTime_ + tauij_LES_pre_;
     tauijU_LES_ = tauij_LES_ * fK_ * fK_;
     aijU_LES_ = tauijU_LES_ - ((2.0/3.0)*I)*kU_LES_;
     bijU_LES_ = aijU_LES_ / 2.0 / (kU_LES_ + this->kMin_);
@@ -756,15 +759,18 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
     );
     volScalarField::Internal G(this->GName(), nut*GbyNu0);
 
-
+    // Info << "Finding ERROR 0 " << endl;
     // Production term from HiFi dataset
     PkULES_ = -tauijU_LES_ && tgradU();
 
     // "Free" temporary variable
     tgradU.clear();
+    // Info << "Finding ERROR 1" << endl;
 
     // Update omegaU and G at the wall
     omegaU_.boundaryFieldRef().updateCoeffs();
+
+    // Info << "Finding ERROR 2" << endl;
 
     volScalarField CDkOmega
     (
@@ -808,7 +814,7 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
           // + omegaSource()
           + fvOptions(alpha, rho, omegaU_)
         );
-
+        Info << "Finding ERROR 3" << endl;
         omegaUEqn.ref().relax();
         fvOptions.constrain(omegaUEqn.ref());
         omegaUEqn.ref().boundaryManipulate(omegaU_.boundaryFieldRef());
@@ -828,8 +834,8 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
 
     // kUDeficit_ refers to R term (correction term in kU-equation)
 
-    kUDeficit_ = //  fvc::ddt(alpha, rho, k_LES_)
-                  fvc::div(alphaRhoPhi, kU_LES_)
+    kUDeficit_ =  fvc::ddt(alpha, rho*kU_LES_)
+                + fvc::div(alphaRhoPhi, kU_LES_)
                 - fvc::laplacian(alpha*rho*DkUEff(F1), kU_LES_)
                 - alpha()*rho()*PkULES_
                 //+ (2.0/3.0)*alpha*rho*divU*k_LES_ // Incompressible: divU = 0

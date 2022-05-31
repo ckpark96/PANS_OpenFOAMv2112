@@ -124,6 +124,7 @@ SeeAlso
 #include <fstream>
 #include <string>
 #include <vector>
+#include <tuple>
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -161,23 +162,33 @@ double round_up(double value, int decimal_places)
 
 // Search for the smallest time in that is larger than the instantaneous time
 // I'm aware the loop looks for upper bound but it is what it is
-int searchLowerBound(double per, double val, std::vector<double> vec)
+std::tuple<int,int> searchBounds(double per, double val, std::vector<double> vec)
 {
   double remain;
   int lowerBoundIndex = 0;
-  for(std::size_t i = 0; i < vec.size(); ++i)
-    {
-      // remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
-      remain = fmod(val, per);
-      if (vec[i] > remain)
+  int upperBoundIndex = 0;
+  remain = fmod(val, per);
+  if (remain > vec.back() && remain < per)
+  {
+    Info << "situation B" << endl;
+    lowerBoundIndex = vec.size() - 1;
+    upperBoundIndex = 0;
+  }
+  else
+  {
+    for(std::size_t i = 0; i < vec.size(); ++i)
       {
-        // Info<< "\nvec[i]: " << round_up(vec[i],4) << endl;
-        // Info<< "\nval: " << round_up(val,6) << endl;
-        lowerBoundIndex = i-1;
-        break;
+        // remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
+        // Info << "vec.back():" << vec.back() << endl;
+        if (vec[i] > remain)
+        {
+          lowerBoundIndex = i-1;
+          upperBoundIndex = i;
+          break;
+        }
       }
-    }
-  return lowerBoundIndex;
+  }
+  return {lowerBoundIndex, upperBoundIndex};
 }
 
 
@@ -259,8 +270,8 @@ protected:
           // Fields to solve for
               volScalarField omega_;
               volScalarField omegaU_;
-              // volScalarField kUDeficit_;
-              volScalarField::Internal kUDeficit_;
+              volScalarField kUDeficit_;
+              // volScalarField::Internal kUDeficit_;
               volSymmTensorField bijUDelta_;
 
           // Misc fields

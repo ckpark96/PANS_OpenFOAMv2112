@@ -85,6 +85,8 @@ Note
 #include "fvOptions.H"
 #include "localEulerDdtScheme.H"
 #include "fvcSmooth.H"
+#include <string>
+#include <tuple>
 
 //--------------------------OWN STUFF------------------------//
 
@@ -106,23 +108,33 @@ double round_up(double value, int decimal_places)
 }
 
 // Search for the smallest time in that is larger than the instantaneous time
-int searchLowerBound(double per, double val, std::vector<double> vec)
+std::tuple<int,int> searchBounds(double per, double val, std::vector<double> vec)
 {
   double remain;
   int lowerBoundIndex = 0;
-  for(std::size_t i = 0; i < vec.size(); ++i)
-    {
-      // remain = remainder(val, per); // not absolute remainder but scaled with respect to the divider
-      remain = fmod(val, per);
-      if (vec[i] > remain)
+  int upperBoundIndex = 0;
+  remain = fmod(val, per);
+  if (remain > vec.back() && remain < per)
+  {
+    Info << "situation B" << endl;
+    lowerBoundIndex = vec.size() - 1;
+    upperBoundIndex = 0;
+  }
+  else
+  {
+    for(std::size_t i = 0; i < vec.size(); ++i)
       {
-        Info << "vec[i]: " << vec[i] << endl;
-        Info << "remain: " << remain << endl;
-        lowerBoundIndex = i-1;
-        break;
+        // remain = remainder(val, per); // not absolute remainder but scaled withrespect to the divider
+        // Info << "vec.back():" << vec.back() << endl;
+        if (vec[i] > remain)
+        {
+          lowerBoundIndex = i-1;
+          upperBoundIndex = i;
+          break;
+        }
       }
-    }
-  return lowerBoundIndex;
+  }
+  return {lowerBoundIndex, upperBoundIndex};
 }
 
 class customClass
@@ -132,8 +144,10 @@ public:
   const float timeStep_;
   double currentTime_;
   int lowerIndex_;
+  int upperIndex_;
   double preTime_;
   double postTime_;
+  double remainTime_;
 
   customClass();
   ~customClass();
@@ -145,7 +159,10 @@ customClass::customClass()
 period_(0.00825617),
 timeStep_(1e-4),
 currentTime_(0.0),
-lowerIndex_(0)
+lowerIndex_(0),
+upperIndex_(0),
+remainTime_(0.0)
+
 {
     std::cout << "period = " << period_ << endl;
     std::cout << "\ndt = " << timeStep_ << endl;
@@ -218,9 +235,11 @@ int main(int argc, char *argv[])
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
         myClass.currentTime_ = runTime.value();
-        myClass.lowerIndex_ = searchLowerBound(myClass.period_, myClass.currentTime_, times_hifi);
+        myClass.lowerIndex_ = std::get<0>(searchBounds(myClass.period_, myClass.currentTime_, times_hifi));
+        myClass.upperIndex_ = std::get<1>(searchBounds(myClass.period_, myClass.currentTime_, times_hifi));
         myClass.preTime_ = times_hifi[myClass.lowerIndex_];
         myClass.postTime_ = times_hifi[myClass.lowerIndex_+1];
+        myClass.remainTime_ = fmod(myClass.currentTime_,myClass.period_) - myClass.preTime_;
 
         Info<< "myClass.currentTime = " << myClass.currentTime_ << endl;
         Info<< "myClass.preTime_: " << myClass.preTime_ << endl;
@@ -288,7 +307,7 @@ int main(int argc, char *argv[])
             );
 
             Info<< "Calculating field U_LES" << endl;
-            U_LES = (U_LES_post - U_LES_pre) / (myClass.postTime_ - myClass.preTime_) * (myClass.currentTime_ - myClass.preTime_) + U_LES_pre;
+            U_LES = (U_LES_post - U_LES_pre) / myClass.timeStep_ * myClass.remainTime_ + U_LES_pre;
             Info<< "DONE Calculating field U_LES\n" << endl;
 
             // --- Pressure corrector loop
