@@ -765,12 +765,9 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
 
     // "Free" temporary variable
     tgradU.clear();
-    // Info << "Finding ERROR 1" << endl;
 
     // Update omegaU and G at the wall
     omegaU_.boundaryFieldRef().updateCoeffs();
-
-    // Info << "Finding ERROR 2" << endl;
 
     volScalarField CDkOmega
     (
@@ -814,7 +811,7 @@ void frozenInterpPANSkOmegaSST<BasicTurbulenceModel>::correct()
           // + omegaSource()
           + fvOptions(alpha, rho, omegaU_)
         );
-        Info << "Finding ERROR 3" << endl;
+
         omegaUEqn.ref().relax();
         fvOptions.constrain(omegaUEqn.ref());
         omegaUEqn.ref().boundaryManipulate(omegaU_.boundaryFieldRef());
