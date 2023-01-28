@@ -1,5 +1,7 @@
 # PANS_OpenFOAM
-MSc graduation thesis
+MSc graduation thesis done from Oct 2021 till Aug 2022
+Published thesis can be found here: https://www.researchgate.net/publication/364709155_k-corrective_frozen_PANS_A_data-driven_stochastic_turbulence_closure_model
+PANS = Partially averaged Navier-Stokes
 
 Built for OpenFOAM v2112
 
@@ -7,7 +9,7 @@ This PANS solver(s) is for f_k fixed in both space and time which is backed in m
 
 The primary focus is on the k-omega SST model which has been validated whereas the k-epsilon model isn't. 
 
-Derivation on the PANS equations used will be published as part of thesis in the near future.
+Derivation on the PANS equations used is included in the link above.
 
 Secondly, k-corrective-frozen-PANS approach which is based on Discovery of Algebraic Reynolds-Stress Models Using Sparse Symbolic Regression (2020) by Schmelzer, Dwight and Cinnella (10.1007/s10494-019-00089-x) is implemented with some modification/correction.
 
